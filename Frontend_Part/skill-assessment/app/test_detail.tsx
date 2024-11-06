@@ -19,7 +19,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Laptop, List, Lightbulb, Camera } from 'lucide-react';
 
-// Define the structure for each test type's details
 interface TestDetail {
   duration: string;
   equipment: string;
@@ -27,7 +26,6 @@ interface TestDetail {
   preparationTips: string[];
 }
 
-// Define all available test details
 const testDetails: Record<string, TestDetail> = {
   coding: {
     duration: '90 minutes',
@@ -45,8 +43,7 @@ const testDetails: Record<string, TestDetail> = {
   },
   design: {
     duration: '120 minutes',
-    equipment:
-      'Computer with design software (e.g., Figma, Adobe XD, or Sketch), stable internet connection',
+    equipment: 'Computer with design software (e.g., Figma, Adobe XD, or Sketch), stable internet connection',
     sampleQuestions: [
       'Create a mobile app interface for a fitness tracking application',
       'Design a landing page for a new eco-friendly product',
@@ -74,10 +71,8 @@ const testDetails: Record<string, TestDetail> = {
   },
 };
 
-// Define the possible tab values
 type Tab = 'overview' | 'equipment' | 'sample' | 'tips' | 'proctoring';
 
-// Define the props for the TestDetailsModal component
 interface TestDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -90,47 +85,35 @@ const TestDetailsModal: React.FC<TestDetailsModalProps> = ({
   testType
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
-
-  // Access the details based on the testType
   const details = testDetails[testType];
-
-  // Define animation variants for the tabs
   const tabVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
     exit: { opacity: 0, y: -20, transition: { duration: 0.3 } },
   };
 
-  // Helper function to capitalize the first letter of a string
-  const capitalizeFirstLetter = (str: string) => {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  };
+  const capitalizeFirstLetter = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
-  // Runtime check to ensure details are defined
-  if (!details) {
-    console.error(`Invalid testType provided: ${testType}`);
-    return null; // Or render a fallback UI
-  }
+  if (!details) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] bg-white rounded-lg shadow-lg border border-gray-200">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
+          <DialogTitle className="text-3xl font-bold text-gray-800">
             {capitalizeFirstLetter(testType)} Test Details
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-600">
             Prepare yourself for the {capitalizeFirstLetter(testType)} assessment. Review the information below to understand what to expect and how to prepare.
           </DialogDescription>
         </DialogHeader>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="grid grid-cols-5 gap-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="equipment">Equipment</TabsTrigger>
-            <TabsTrigger value="sample">Sample</TabsTrigger>
-            <TabsTrigger value="tips">Tips</TabsTrigger>
-            <TabsTrigger value="proctoring">Proctoring</TabsTrigger>
+          <TabsList className="flex gap-4 p-2 bg-gray-100 rounded-lg">
+            <TabsTrigger value="overview" className="px-4 py-2 rounded-lg font-medium">Overview</TabsTrigger>
+            <TabsTrigger value="equipment" className="px-4 py-2 rounded-lg font-medium">Equipment</TabsTrigger>
+            <TabsTrigger value="sample" className="px-4 py-2 rounded-lg font-medium">Sample</TabsTrigger>
+            <TabsTrigger value="tips" className="px-4 py-2 rounded-lg font-medium">Tips</TabsTrigger>
+            <TabsTrigger value="proctoring" className="px-4 py-2 rounded-lg font-medium">Proctoring</TabsTrigger>
           </TabsList>
           <AnimatePresence mode="wait">
             <motion.div
@@ -140,42 +123,36 @@ const TestDetailsModal: React.FC<TestDetailsModalProps> = ({
               animate="visible"
               exit="exit"
             >
-              {/* Overview Tab Content */}
-              <TabsContent value="overview" className="mt-4">
+              <TabsContent value="overview" className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <Clock className="w-6 h-6 text-blue-500" />
-                    <span className="font-semibold">Duration:</span>
-                    <Badge variant="secondary">{details.duration}</Badge>
+                    <span className="font-semibold text-gray-700">Duration:</span>
+                    <Badge variant="secondary" className="px-2 py-1 text-sm">{details.duration}</Badge>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    This test is designed to assess your {testType} skills through a series of practical tasks and questions.
-                    Make sure you're in a quiet environment and have allocated enough time to complete the test without interruptions.
+                  <p className="text-sm text-gray-700">
+                    This test is designed to assess your {testType} skills through a series of practical tasks and questions. Make sure you're in a quiet environment and have allocated enough time to complete the test without interruptions.
                   </p>
                 </div>
               </TabsContent>
 
-              {/* Equipment Tab Content */}
-              <TabsContent value="equipment" className="mt-4">
+              <TabsContent value="equipment" className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <Laptop className="w-6 h-6 text-green-500" />
-                    <span className="font-semibold">Required Equipment:</span>
+                    <span className="font-semibold text-gray-700">Required Equipment:</span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {details.equipment}
-                  </p>
+                  <p className="text-sm text-gray-700">{details.equipment}</p>
                 </div>
               </TabsContent>
 
-              {/* Sample Questions Tab Content */}
-              <TabsContent value="sample" className="mt-4">
+              <TabsContent value="sample" className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <List className="w-6 h-6 text-purple-500" />
-                    <span className="font-semibold">Sample Questions:</span>
+                    <span className="font-semibold text-gray-700">Sample Questions:</span>
                   </div>
-                  <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                  <ul className="list-disc list-inside text-sm text-gray-700 space-y-2 pl-4">
                     {details.sampleQuestions.map((question, index) => (
                       <li key={index}>{question}</li>
                     ))}
@@ -183,14 +160,13 @@ const TestDetailsModal: React.FC<TestDetailsModalProps> = ({
                 </div>
               </TabsContent>
 
-              {/* Preparation Tips Tab Content */}
-              <TabsContent value="tips" className="mt-4">
+              <TabsContent value="tips" className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <Lightbulb className="w-6 h-6 text-yellow-500" />
-                    <span className="font-semibold">Preparation Tips:</span>
+                    <span className="font-semibold text-gray-700">Preparation Tips:</span>
                   </div>
-                  <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                  <ul className="list-disc list-inside text-sm text-gray-700 space-y-2 pl-4">
                     {details.preparationTips.map((tip, index) => (
                       <li key={index}>{tip}</li>
                     ))}
@@ -198,23 +174,22 @@ const TestDetailsModal: React.FC<TestDetailsModalProps> = ({
                 </div>
               </TabsContent>
 
-              {/* Proctoring Tab Content */}
-              <TabsContent value="proctoring" className="mt-4">
+              <TabsContent value="proctoring" className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <Camera className="w-6 h-6 text-red-500" />
-                    <span className="font-semibold">AI Proctoring:</span>
+                    <span className="font-semibold text-gray-700">AI Proctoring:</span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-sm text-gray-700">
                     This test uses AI-powered proctoring to ensure fairness and integrity. The system will:
                   </p>
-                  <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                  <ul className="list-disc list-inside text-sm text-gray-700 space-y-2 pl-4">
                     <li>Verify your identity using facial recognition</li>
                     <li>Monitor your screen for unauthorized resources</li>
                     <li>Detect suspicious behavior or movements</li>
                     <li>Ensure you remain in view of the camera throughout the test</li>
                   </ul>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-sm text-gray-700">
                     All proctoring data is encrypted and used solely for test integrity purposes. It will be deleted after the test review period.
                   </p>
                 </div>
@@ -223,13 +198,8 @@ const TestDetailsModal: React.FC<TestDetailsModalProps> = ({
           </AnimatePresence>
         </Tabs>
         <div className="mt-6 flex justify-end space-x-4">
-          <Button variant="outline" onClick={onClose}>Close</Button>
-          <Button
-            onClick={() => {
-              onClose();
-              alert('Starting test...');
-            }}
-          >
+          <Button variant="outline" onClick={onClose} className="px-4 py-2 text-gray-700 border-gray-300">Close</Button>
+          <Button onClick={() => alert('Starting test...')} className="bg-blue-600 text-white px-6 py-2 rounded-lg">
             Start Test
           </Button>
         </div>
