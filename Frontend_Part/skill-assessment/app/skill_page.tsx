@@ -1,5 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import Link from "next/link"; // Import Link for navigation
+import { useAuth } from "./context/authContext"; // Import useAuth for authentication
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -109,6 +112,8 @@ const mockData = [
 ];
 
 const SkillAssessmentInterface = () => {
+  const { token } = useAuth(); // Get authentication status from context
+  const router = useRouter();
   const [activeTest, setActiveTest] = useState(null);
   const [testInProgress, setTestInProgress] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -123,6 +128,13 @@ const SkillAssessmentInterface = () => {
     role: "Developer",
     avatar: "https://via.placeholder.com/150",
   });
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!token) {
+      router.push("/login");
+    }
+  }, [token, router]);
 
   useEffect(() => {
     document.body.classList.toggle("dark", darkMode);

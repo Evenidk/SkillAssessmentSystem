@@ -19,7 +19,6 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
   const [questionStatus, setQuestionStatus] = useState(Array(10).fill("default")); 
   const videoRef = useRef(null);
 
-  // Load questions based on the test type and current section
   const questions = questionSets[testType]?.[section] || [];
 
   useEffect(() => {
@@ -58,7 +57,7 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
 
   const stopCamera = () => {
     if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
+      const stream = videoRef.current.srcObject;
       const tracks = stream.getTracks();
       tracks.forEach((track) => track.stop());
       videoRef.current.srcObject = null;
@@ -94,12 +93,15 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
       updatedStatus[currentStep] = "answered";
       setQuestionStatus(updatedStatus);
 
-      setSelectedOption(null); // Reset selected option for the next question
+      setSelectedOption(null);
 
-      if (currentStep + 1 < questions.length) {
-        setCurrentStep(currentStep + 1);
+      if (section === "section1" && currentStep + 1 === 5) {
+        setSection("section2");
+        setCurrentStep(0); 
+      } else if (section === "section2" && currentStep + 1 >= questions.length) {
+        submitTest(); 
       } else {
-        submitTest();
+        setCurrentStep((prevStep) => prevStep + 1);
       }
     } else {
       toast.warning("Please select an option before proceeding.");
@@ -116,12 +118,18 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
   };
 
   const submitTest = () => {
-    const correctAnswers = questions.filter(
+    const allQuestions = [...questionSets[testType].section1, ...questionSets[testType].section2];
+    const correctAnswers = allQuestions.filter(
       (q, index) => q.answer === userAnswers[index]
     ).length;
+
     setScore(correctAnswers);
     exitFullScreen();
     stopCamera();
+  };
+
+  const handleFinishTest = () => {
+    submitTest();
   };
 
   const handleClose = () => {
@@ -147,7 +155,7 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
             </Button>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">You scored {score} out of {questions.length}</p>
+            <p className="mb-4">You scored {score} out of 10</p>
             <Button onClick={handleClose} className="w-full">
               Close
             </Button>
@@ -203,7 +211,6 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
         )}
       </div>
 
-      {/* Top Navbar Header */}
       <div className="fixed top-0 left-0 w-full bg-[#6482AD] text-white px-4 py-3 md:px-8 md:py-4 flex flex-col md:flex-row justify-between items-center z-50">
         <div className="flex items-center space-x-4">
           <span className="text-xl md:text-2xl font-bold">SkillProveAI</span>
@@ -221,14 +228,13 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
           </div>
           <Button
             className="bg-[#FA7070] text-white px-4 py-1 rounded-md"
-            onClick={handleClose}
+            onClick={handleFinishTest} // Modified to submit test on click
           >
             Finish Test
           </Button>
         </div>
       </div>
 
-      {/* Main Content Container */}
       <div className="relative w-full max-w-5xl mx-auto p-4 md:p-6 bg-white shadow-lg rounded-lg mt-16 md:mt-24">
         <div className="flex justify-between items-center border-b pb-4 mb-4">
           <h2 className="text-lg font-semibold">
@@ -238,7 +244,6 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
         </div>
 
         <div className="flex flex-col md:flex-row">
-          {/* Left Sidebar - Navigation & Question List */}
           <div className="w-full md:w-1/3 bg-gray-50 rounded-lg p-4 mb-4 md:mb-0 md:mr-8 shadow-sm">
             <div className="mb-4">
               <select
@@ -271,7 +276,6 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
             </div>
           </div>
 
-          {/* Right Content - Question and Options */}
           <div className="flex-grow bg-white p-4 md:p-6 rounded-lg shadow-md">
             <div className="text-xl font-medium mb-4">{currentQuestion.question}</div>
             <div className="space-y-4">
