@@ -5,9 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X, Timer } from "lucide-react";
 import { toast } from "react-toastify";
-import { questionSets } from "../app/questions"; 
+import { questionSets } from "../app/questions";
+import { addTestScore } from '@/lib/api';  // Add this import
+import { useAuth } from '@/app/context/authContext';
 
 const ProctoredTestComponent = ({ testType, onClose }) => {
+  const { token } = useAuth(); // Add this line
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [hasCameraAccess, setHasCameraAccess] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -16,7 +19,8 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
   const [timeLeft, setTimeLeft] = useState(600);
   const [score, setScore] = useState(null);
   const [section, setSection] = useState("section1");
-  const [questionStatus, setQuestionStatus] = useState(Array(10).fill("default")); 
+  const [questionStatus, setQuestionStatus] = useState(Array(10).fill("default"));
+  const [isSaving, setIsSaving] = useState(false); // Add this line
   const videoRef = useRef(null);
 
   const questions = questionSets[testType]?.[section] || [];
@@ -97,9 +101,9 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
 
       if (section === "section1" && currentStep + 1 === 5) {
         setSection("section2");
-        setCurrentStep(0); 
+        setCurrentStep(0);
       } else if (section === "section2" && currentStep + 1 >= questions.length) {
-        submitTest(); 
+        submitTest();
       } else {
         setCurrentStep((prevStep) => prevStep + 1);
       }
@@ -117,19 +121,33 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
     }
   };
 
-  const submitTest = () => {
+  const submitTest = async () => {
+    setIsSaving(true);
     const allQuestions = [...questionSets[testType].section1, ...questionSets[testType].section2];
     const correctAnswers = allQuestions.filter(
       (q, index) => q.answer === userAnswers[index]
     ).length;
 
     setScore(correctAnswers);
-    exitFullScreen();
-    stopCamera();
+
+    try {
+      await addTestScore(token, {
+        testType: testType,
+        score: correctAnswers
+      });
+      toast.success("Test score saved successfully!");
+    } catch (error) {
+      console.error("Failed to save test score:", error);
+      toast.error("Failed to save test score");
+    } finally {
+      setIsSaving(false);
+      exitFullScreen();
+      stopCamera();
+    }
   };
 
-  const handleFinishTest = () => {
-    submitTest();
+  const handleFinishTest = async () => {
+    await submitTest();
   };
 
   const handleClose = () => {
@@ -155,10 +173,16 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
             </Button>
           </CardHeader>
           <CardContent>
-            <p className="mb-4">You scored {score} out of 10</p>
-            <Button onClick={handleClose} className="w-full">
-              Close
-            </Button>
+            {isSaving ? (
+              <p className="text-center">Saving your score...</p>
+            ) : (
+              <>
+                <p className="mb-4">You scored {score} out of 10</p>
+                <Button onClick={handleClose} className="w-full">
+                  Close
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -228,7 +252,7 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
           </div>
           <Button
             className="bg-[#FA7070] text-white px-4 py-1 rounded-md"
-            onClick={handleFinishTest} // Modified to submit test on click
+            onClick={handleFinishTest} 
           >
             Finish Test
           </Button>

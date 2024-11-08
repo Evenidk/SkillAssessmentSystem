@@ -127,51 +127,75 @@ export const deleteAvatar = async (token) => {
   }
 };
 
-// Update the existing addTestScore function to match your backend
-export const addTestScore = async (token, scoreData) => {
-    try {
-      const response = await fetch(`${BASE_URL}/tests/add-score`, {
-        method: 'POST',
-        headers: createAuthHeaders(token),
-        body: JSON.stringify({
-          testType: scoreData.testType,
-          score: scoreData.score
-        }),
-      });
-      return handleResponse(response);
-    } catch (error) {
-      console.error("Add score error:", error);
-      throw new Error(error.message || "Failed to add score");
+// Update these functions in your api.js file
+
+// Function to add a test score
+export const addTestScore = async (token, testData) => {
+  try {
+    const response = await fetch(`${BASE_URL}/tests/add-score`, {
+      method: 'POST',
+      headers: createAuthHeaders(token),
+      body: JSON.stringify({
+        testType: testData.testType,
+        score: testData.score
+      }),
+    });
+    const data = await handleResponse(response);
+    return data.testScores; // Returns the updated array of test scores
+  } catch (error) {
+    console.error("Add test score error:", error);
+    throw new Error(error.message || "Failed to add test score");
+  }
+};
+
+// Function to get user's test scores
+export const getUserTestScores = async (token) => {
+  try {
+    if (!token) {
+      throw new Error('No authentication token provided');
     }
-  };
-  
-  // Update the existing fetchTestScores function
-  export const fetchTestScores = async (token) => {
-    try {
-      const response = await fetch(`${BASE_URL}/tests/scores`, {
-        method: 'GET',
-        headers: createAuthHeaders(token, false),
-      });
-      return handleResponse(response);
-    } catch (error) {
-      console.error("Fetch scores error:", error);
-      throw new Error(error.message || "Failed to fetch scores");
+
+    console.log('Fetching scores with token:', token); // Debug log
+
+    const response = await fetch(`${BASE_URL}/tests/scores`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    console.log('Response status:', response.status); // Debug log
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to fetch test scores');
     }
-  };
-  
-  // Add new function to fetch performance data for the bar graph
-  export const fetchUserPerformanceData = async (token) => {
-    try {
-      const response = await fetch(`${BASE_URL}/tests/performance`, {
-        method: 'GET',
-        headers: createAuthHeaders(token, false),
-      });
-      return handleResponse(response);
-    } catch (error) {
-      console.error("Fetch performance data error:", error);
-      throw new Error(error.message || "Failed to fetch performance data");
-    }
-  };
+
+    const data = await response.json();
+    console.log('Received data:', data); // Debug log
+
+    return data.testScores || [];
+  } catch (error) {
+    console.error("Fetch test scores error:", error);
+    throw error;
+  }
+};
+
+// Function to get user's performance data for the bar graph
+export const getUserPerformanceData = async (token) => {
+  try {
+    const response = await fetch(`${BASE_URL}/tests/performance`, {
+      method: 'GET',
+      headers: createAuthHeaders(token, false),
+    });
+    const data = await handleResponse(response);
+    return data.performanceData; // Returns the formatted performance data for the graph
+  } catch (error) {
+    console.error("Fetch performance data error:", error);
+    throw new Error(error.message || "Failed to fetch performance data");
+  }
+};
 
 // New function to check token validity
 export const validateToken = async (token) => {
