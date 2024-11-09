@@ -1,51 +1,40 @@
+// components/ProctoredTestComponent.tsx
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X, Timer } from "lucide-react";
 import { toast } from "react-toastify";
-import { questionSets } from "../app/questions";
-import { addTestScore } from '@/lib/api';  // Add this import
+import { questionSets } from "@/app/questions";
+import { addTestScore } from '@/lib/api';
 import { useAuth } from '@/app/context/authContext';
+import SecurityMonitor from "./SecurityMonitor";
+import CameraFeed from "./CameraFeed";
 
-const ProctoredTestComponent = ({ testType, onClose }) => {
-  const { token } = useAuth(); // Add this line
+interface ProctoredTestComponentProps {
+  testType: string;
+  onClose: () => void;
+}
+
+const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({ 
+  testType, 
+  onClose 
+}) => {
+  const { token } = useAuth();
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [hasCameraAccess, setHasCameraAccess] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [userAnswers, setUserAnswers] = useState([]);
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(600);
-  const [score, setScore] = useState(null);
+  const [userAnswers, setUserAnswers] = useState<string[]>([]);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
+  const [score, setScore] = useState<number | null>(null);
   const [section, setSection] = useState("section1");
-  const [questionStatus, setQuestionStatus] = useState(Array(10).fill("default"));
-  const [isSaving, setIsSaving] = useState(false); // Add this line
-  const videoRef = useRef(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [cameraViolations, setCameraViolations] = useState(0);
 
+  const warningLimit = 5;
+  const maxCameraViolations = 3;
   const questions = questionSets[testType]?.[section] || [];
-
-  useEffect(() => {
-    const requestCameraAccess = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          setHasCameraAccess(true);
-        }
-      } catch (error) {
-        console.error("Error accessing camera:", error);
-        toast.error("Camera access is required to start the test.");
-        onClose();
-      }
-    };
-
-    requestCameraAccess();
-    return () => {
-      stopCamera();
-      exitFullScreen();
-    };
-  }, []);
 
   useEffect(() => {
     if (timeLeft <= 0) {
@@ -53,29 +42,21 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
       submitTest();
       return;
     }
+
     const timer = setInterval(() => {
-      setTimeLeft((prevTime) => prevTime - 1);
+      setTimeLeft((prev) => prev - 1);
     }, 1000);
+
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject;
-      const tracks = stream.getTracks();
-      tracks.forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-  };
-
-  const enterFullScreen = () => {
-    if (document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen()
-        .then(() => setIsFullScreen(true))
-        .catch((err) => {
-          console.error("Failed to enter fullscreen:", err);
-          toast.error("Fullscreen is required for the test.");
-        });
+  const enterFullScreen = async () => {
+    try {
+      await document.documentElement.requestFullscreen();
+      setIsFullScreen(true);
+    } catch (error) {
+      console.error("Failed to enter fullscreen:", error);
+      toast.error("Fullscreen is required for the test.");
     }
   };
 
@@ -88,15 +69,23 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
     setIsFullScreen(false);
   };
 
+  const handleCameraViolation = () => {
+    setCameraViolations(prev => {
+      const newCount = prev + 1;
+      if (newCount >= maxCameraViolations) {
+        toast.error("Too many camera violations. Test will be submitted.");
+        submitTest();
+      } else {
+        toast.warning(`Camera violation ${newCount}/${maxCameraViolations}`);
+      }
+      return newCount;
+    });
+  };
+
   const handleAnswer = () => {
     if (selectedOption) {
       const updatedAnswers = [...userAnswers, selectedOption];
       setUserAnswers(updatedAnswers);
-
-      const updatedStatus = [...questionStatus];
-      updatedStatus[currentStep] = "answered";
-      setQuestionStatus(updatedStatus);
-
       setSelectedOption(null);
 
       if (section === "section1" && currentStep + 1 === 5) {
@@ -105,19 +94,10 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
       } else if (section === "section2" && currentStep + 1 >= questions.length) {
         submitTest();
       } else {
-        setCurrentStep((prevStep) => prevStep + 1);
+        setCurrentStep((prev) => prev + 1);
       }
     } else {
       toast.warning("Please select an option before proceeding.");
-    }
-  };
-
-  const handleRevisitLater = () => {
-    const updatedStatus = [...questionStatus];
-    updatedStatus[currentStep] = "revisit";
-    setQuestionStatus(updatedStatus);
-    if (currentStep + 1 < questions.length) {
-      setCurrentStep(currentStep + 1);
     }
   };
 
@@ -131,39 +111,37 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
     setScore(correctAnswers);
 
     try {
-      await addTestScore(token, {
-        testType: testType,
-        score: correctAnswers
+      await addTestScore(token, { 
+        testType, 
+        score: correctAnswers,
+        cameraViolations,
       });
-      toast.success("Test score saved successfully!");
+      toast.success("Test submitted successfully!");
     } catch (error) {
-      console.error("Failed to save test score:", error);
-      toast.error("Failed to save test score");
+      toast.error("Failed to submit test");
     } finally {
       setIsSaving(false);
       exitFullScreen();
-      stopCamera();
     }
   };
 
-  const handleFinishTest = async () => {
+  const handleClose = () => {
+    exitFullScreen();
+    onClose();
+  };
+
+  const handleAutoSubmit = async () => {
+    toast.error("Maximum warnings reached. Test is being submitted.");
     await submitTest();
   };
 
-  const handleClose = () => {
-    onClose();
-    stopCamera();
-    exitFullScreen();
-  };
-
+  // Score display screen
   if (score !== null) {
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.8 }}
-        transition={{ duration: 0.3 }}
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
       >
         <Card className="w-full max-w-md p-6">
           <CardHeader className="flex justify-between items-center">
@@ -177,7 +155,10 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
               <p className="text-center">Saving your score...</p>
             ) : (
               <>
-                <p className="mb-4">You scored {score} out of 10</p>
+                <p className="mb-4 text-lg">Your Score: {score} out of 10</p>
+                <p className="mb-4 text-sm text-gray-600">
+                  Camera Violations: {cameraViolations}
+                </p>
                 <Button onClick={handleClose} className="w-full">
                   Close
                 </Button>
@@ -189,25 +170,28 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
     );
   }
 
+  // Fullscreen prompt
   if (!isFullScreen) {
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.8 }}
-        transition={{ duration: 0.3 }}
-        className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60]"
       >
         <Card className="w-full max-w-md p-6 text-center">
           <CardHeader>
-            <CardTitle>Please Enable Fullscreen</CardTitle>
+            <CardTitle>Enable Fullscreen</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="mb-6 text-gray-600">
-              To proceed with the test, please enable fullscreen mode for an immersive experience.
+              Please enable fullscreen mode and allow camera access to continue with the test.
+              You will receive a warning if you exit fullscreen mode or if your face is not visible.
             </p>
-            <Button onClick={enterFullScreen} className="text-white bg-blue-600 hover:bg-blue-700">
-              Enable Fullscreen
+            <Button 
+              onClick={enterFullScreen}
+              className="w-full bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Enter Fullscreen
             </Button>
           </CardContent>
         </Card>
@@ -215,111 +199,105 @@ const ProctoredTestComponent = ({ testType, onClose }) => {
     );
   }
 
-  const currentQuestion = questions[currentStep];
-
+  // Main test interface (shown when in fullscreen)
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 bg-white z-[55] flex flex-col"
     >
-      <div className="absolute top-0 left-0 w-full h-full bg-white">
-        {hasCameraAccess && (
-          <video
-            ref={videoRef}
-            autoPlay
-            className="absolute inset-0 w-full h-full object-cover opacity-30"
-          />
-        )}
+      <SecurityMonitor
+        onMaxWarningsReached={handleAutoSubmit}
+        warningLimit={warningLimit}
+      />
+
+      {/* Camera Feed */}
+      <div className="fixed top-4 right-4 z-[56]">
+        <CameraFeed onFaceDetectionViolation={handleCameraViolation} />
       </div>
 
-      <div className="fixed top-0 left-0 w-full bg-[#6482AD] text-white px-4 py-3 md:px-8 md:py-4 flex flex-col md:flex-row justify-between items-center z-50">
-        <div className="flex items-center space-x-4">
-          <span className="text-xl md:text-2xl font-bold">SkillProveAI</span>
-          <div className="text-sm md:text-base">
-            <div className="font-semibold">UserName</div>
-            <div>Test Name: {testType.charAt(0).toUpperCase() + testType.slice(1)}</div>
+      {/* Header */}
+      <div className="bg-[#6482AD] text-white px-6 py-4 shadow-md">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-8">
+            <div>
+              <h1 className="text-xl font-bold">Test: {testType}</h1>
+              <p className="text-sm opacity-90">Section: {section}</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Timer className="h-5 w-5" />
+              <span className="text-lg font-medium">
+                {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+              </span>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center space-x-4 mt-2 md:mt-0">
-          <div className="flex items-center space-x-2">
-            <Timer className="h-5 w-5 text-white" />
-            <span className="text-sm md:text-base">
-              {Math.floor(timeLeft / 60)}:{("0" + (timeLeft % 60)).slice(-2)}
-            </span>
-          </div>
-          <Button
-            className="bg-[#FA7070] text-white px-4 py-1 rounded-md"
-            onClick={handleFinishTest} 
+          <Button 
+            onClick={submitTest}
+            className="bg-[#FA7070] hover:bg-red-600 text-white border-none mr-[340px]"
           >
-            Finish Test
+            Submit Test
           </Button>
         </div>
       </div>
 
-      <div className="relative w-full max-w-5xl mx-auto p-4 md:p-6 bg-white shadow-lg rounded-lg mt-16 md:mt-24">
-        <div className="flex justify-between items-center border-b pb-4 mb-4">
-          <h2 className="text-lg font-semibold">
-            Question {currentStep + 1} of {questions.length}
-          </h2>
-          <Button variant="link" className="text-blue-600" onClick={handleRevisitLater}>Revisit Later</Button>
-        </div>
-
-        <div className="flex flex-col md:flex-row">
-          <div className="w-full md:w-1/3 bg-gray-50 rounded-lg p-4 mb-4 md:mb-0 md:mr-8 shadow-sm">
-            <div className="mb-4">
-              <select
-                className="w-full p-2 border rounded-md text-sm border-gray-300"
-                value={section}
-                onChange={(e) => setSection(e.target.value)}
-              >
-                <option value="section1">Section 1</option>
-                <option value="section2">Section 2</option>
-              </select>
+      {/* Question Area */}
+      <div className="flex-1 p-6 bg-gray-50 overflow-y-auto">
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold">
+                Question {currentStep + 1} of {questions.length}
+              </h2>
+              <span className="text-sm text-gray-500">
+                Progress: {Math.round(((currentStep + 1) / questions.length) * 100)}%
+              </span>
             </div>
-            <div className="mb-4">
-              <span className="text-gray-600">Question Navigation</span>
-              <div className="grid grid-cols-5 gap-2 mt-2">
-                {questions.map((_, index) => (
-                  <button
-                    key={index}
-                    className={`w-10 h-10 rounded-full ${
-                      index === currentStep ? "bg-blue-600 text-white" : questionStatus[index] === "answered"
-                        ? "bg-green-600 text-white" : questionStatus[index] === "revisit"
-                        ? "bg-purple-600 text-white" : questionStatus[index] === "unanswered"
-                        ? "bg-red-600 text-white" : "bg-gray-200 text-gray-600"
-                    }`}
-                    onClick={() => setCurrentStep(index)}
-                  >
-                    {index + 1}
-                  </button>
-                ))}
-              </div>
+            
+            {/* Progress bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${((currentStep + 1) / questions.length) * 100}%` }}
+              />
             </div>
-          </div>
 
-          <div className="flex-grow bg-white p-4 md:p-6 rounded-lg shadow-md">
-            <div className="text-xl font-medium mb-4">{currentQuestion.question}</div>
+            <p className="text-lg mb-8">{questions[currentStep]?.question}</p>
+            
             <div className="space-y-4">
-              {currentQuestion.options.map((option, index) => (
+              {questions[currentStep]?.options.map((option, index) => (
                 <Button
                   key={index}
                   variant="outline"
-                  className={`w-full p-4 border rounded-lg text-left ${
-                    selectedOption === option ? "border-blue-600 bg-blue-50" : "border-gray-300"
+                  className={`w-full p-6 justify-start text-left text-lg ${
+                    selectedOption === option 
+                      ? 'border-2 border-blue-500 bg-blue-50' 
+                      : 'hover:border-gray-400'
                   }`}
                   onClick={() => setSelectedOption(option)}
                 >
+                  <span className="mr-4">{String.fromCharCode(65 + index)}.</span>
                   {option}
                 </Button>
               ))}
             </div>
-            <div className="flex justify-between mt-6">
-              <Button variant="ghost" className="text-blue-600" onClick={() => setSelectedOption(null)}>Clear Response</Button>
-              <Button className="bg-blue-600 text-white px-6 py-2 rounded-md" onClick={handleAnswer}>Next</Button>
-            </div>
+          </div>
+
+          <div className="flex justify-between items-center mt-8">
+            <Button
+              variant="outline"
+              onClick={() => setSelectedOption(null)}
+              className="px-6"
+            >
+              Clear Selection
+            </Button>
+            <Button
+              onClick={handleAnswer}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg"
+            >
+              {section === "section2" && currentStep + 1 === questions.length 
+                ? "Submit Test" 
+                : "Next Question"}
+            </Button>
           </div>
         </div>
       </div>

@@ -1,4 +1,13 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
-
-export default nextConfig;
+const nextConfig = {
+    webpack: (config) => {
+      config.resolve.fallback = { fs: false };
+      return config;
+    },
+    experimental: {
+      esmExternals: 'loose',
+    },
+  };
+  
+  export default nextConfig;
+  

@@ -168,14 +168,17 @@ export const getUserTestScores = async (token) => {
     console.log('Response status:', response.status); // Debug log
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to fetch test scores');
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('Received data:', data); // Debug log
+    console.log('API Response data:', data); // Debug log
 
-    return data.testScores || [];
+    // Ensure we're returning an array of test scores
+    const scores = data.testScores || [];
+    console.log('Processed scores:', scores); // Debug log
+
+    return scores;
   } catch (error) {
     console.error("Fetch test scores error:", error);
     throw error;
