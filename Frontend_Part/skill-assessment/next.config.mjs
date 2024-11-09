@@ -1,13 +1,16 @@
+// next.config.mjs
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     webpack: (config) => {
-      config.resolve.fallback = { fs: false };
+      config.resolve.fallback = {
+        fs: false,
+        path: false,
+        stream: false,
+        crypto: false,
+      };
       return config;
-    },
-    experimental: {
-      esmExternals: 'loose',
     },
   };
   
   export default nextConfig;
-  

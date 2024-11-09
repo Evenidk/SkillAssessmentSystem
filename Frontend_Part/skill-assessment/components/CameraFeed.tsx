@@ -2,8 +2,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
-import * as faceapi from 'face-api.js';
-import * as tf from '@tensorflow/tfjs';
+import * as faceapi from '@vladmandic/face-api';
 
 interface CameraFeedProps {
   onFaceDetectionViolation?: () => void;
@@ -13,128 +12,122 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ onFaceDetectionViolation }) => 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isModelLoading, setIsModelLoading] = useState(true);
-  const [isModelLoaded, setIsModelLoaded] = useState(false);
-  const [error, setError] = useState<string>('');
+  const consecutiveNoFaceFrames = useRef(0);
+  const MAX_NO_FACE_FRAMES = 30;
+
+  // Define smaller dimensions
+  const CAMERA_WIDTH = 240;  // Half of the original size
+  const CAMERA_HEIGHT = 240; // Half of the original size
 
   useEffect(() => {
     const loadModels = async () => {
       try {
-        await tf.setBackend('webgl');
-        await tf.ready();
-        
-        setIsModelLoading(true);
-        const MODEL_URL = `${window.location.origin}/models`; // Ensures absolute URL based on your domain
-
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-
-        setIsModelLoaded(true);
-        setError('');
-      } catch (err) {
-        console.error('Error loading models:', err);
-        setError('Failed to load face detection models. Check console for details.');
-        toast.error('Face detection model load error.');
-      } finally {
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+        startVideo();
         setIsModelLoading(false);
+      } catch (error) {
+        console.error('Error loading models:', error);
+        toast.error('Failed to load face detection models');
+      }
+    };
+
+    const startVideo = async () => {
+      try {
+        if (videoRef.current) {
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+              width: CAMERA_WIDTH,
+              height: CAMERA_HEIGHT,
+              facingMode: 'user',
+              frameRate: { ideal: 30, max: 30 }
+            } 
+          });
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error starting video:', error);
+        toast.error('Unable to access camera');
       }
     };
 
     loadModels();
+
+    return () => {
+      if (videoRef.current?.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+        tracks.forEach(track => track.stop());
+      }
+    };
   }, []);
 
-  useEffect(() => {
-    const setupCamera = async () => {
-      if (!videoRef.current) return;
+  const handleVideoPlay = () => {
+    if (!videoRef.current || !canvasRef.current) return;
 
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480, facingMode: "user" }
-        });
-        videoRef.current.srcObject = stream;
-      } catch (err) {
-        console.error('Error accessing camera:', err);
-        setError('Failed to access camera.');
-        toast.error('Camera access is required.');
-      }
+    const canvas = canvasRef.current;
+    const displaySize = { 
+      width: CAMERA_WIDTH, 
+      height: CAMERA_HEIGHT 
     };
+    
+    faceapi.matchDimensions(canvas, displaySize);
 
-    if (isModelLoaded) setupCamera();
-  }, [isModelLoaded]);
-
-  useEffect(() => {
-    if (!isModelLoaded || !videoRef.current || !canvasRef.current) return;
-
-    const detectFace = async () => {
+    const detectFaces = async () => {
       if (!videoRef.current || !canvasRef.current) return;
 
-      const options = new faceapi.TinyFaceDetectorOptions({
-        inputSize: 320,
-        scoreThreshold: 0.5
-      });
-
       try {
-        const detections = await faceapi.detectAllFaces(videoRef.current, options);
+        const detections = await faceapi.detectAllFaces(
+          videoRef.current,
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize: 160, // Reduced for better performance
+            scoreThreshold: 0.5
+          })
+        );
 
-        if (detections.length === 0) onFaceDetectionViolation?.();
+        if (detections.length === 0) {
+          consecutiveNoFaceFrames.current++;
+          if (consecutiveNoFaceFrames.current >= MAX_NO_FACE_FRAMES) {
+            onFaceDetectionViolation?.();
+            consecutiveNoFaceFrames.current = 0;
+          }
+        } else {
+          consecutiveNoFaceFrames.current = 0;
+        }
 
-        const canvas = canvasRef.current;
-        const displaySize = {
-          width: videoRef.current.videoWidth,
-          height: videoRef.current.videoHeight
-        };
-
-        faceapi.matchDimensions(canvas, displaySize);
         const resizedDetections = faceapi.resizeResults(detections, displaySize);
-
         canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
         faceapi.draw.drawDetections(canvas, resizedDetections);
-      } catch (err) {
-        console.error('Face detection error:', err);
-        setError('Face detection error. Check console for details.');
-        toast.error('Face detection error. Retry or refresh page.');
+
+        requestAnimationFrame(detectFaces);
+      } catch (error) {
+        console.error('Face detection error:', error);
+        requestAnimationFrame(detectFaces);
       }
     };
 
-    const interval = setInterval(detectFace, 100);
-    return () => clearInterval(interval);
-  }, [isModelLoaded, onFaceDetectionViolation]);
-
-  if (error) {
-    return (
-      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-        <strong className="font-bold">Error!</strong>
-        <span className="block sm:inline"> {error}</span>
-        <button
-          className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-          onClick={() => window.location.reload()}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
+    detectFaces();
+  };
 
   return (
-    <div className="relative">
+    <div className="relative w-[300px] h-[200px] rounded-lg overflow-hidden shadow-lg border-4 border-white-600">
       {isModelLoading && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-          <div className="text-white">Loading face detection models...</div>
+          <div className="text-white text-sm">Loading camera...</div>
         </div>
       )}
-      <div className="relative">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-[640px] h-[480px] object-cover"
-        />
-        <canvas
-          ref={canvasRef}
-          className="absolute top-0 left-0 w-full h-full"
-        />
-      </div>
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted
+        onPlay={handleVideoPlay}
+        className="absolute top-0 left-0 w-full h-full object-cover mirror"
+        style={{ transform: 'scaleX(-1)' }}
+      />
+      <canvas
+        ref={canvasRef}
+        className="absolute top-0 left-0 w-full h-full"
+        style={{ transform: 'scaleX(-1)' }}
+      />
     </div>
   );
 };

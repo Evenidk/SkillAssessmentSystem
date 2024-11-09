@@ -4,11 +4,11 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X, Timer } from "lucide-react";
+import { X, Timer, Flag, CheckCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import { questionSets } from "@/app/questions";
-import { addTestScore } from '@/lib/api';
-import { useAuth } from '@/app/context/authContext';
+import { addTestScore } from "@/lib/api";
+import { useAuth } from "@/app/context/authContext";
 import SecurityMonitor from "./SecurityMonitor";
 import CameraFeed from "./CameraFeed";
 
@@ -17,9 +17,14 @@ interface ProctoredTestComponentProps {
   onClose: () => void;
 }
 
-const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({ 
-  testType, 
-  onClose 
+interface QuestionStatus {
+  answered: boolean;
+  flagged: boolean;
+}
+
+const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
+  testType,
+  onClose,
 }) => {
   const { token } = useAuth();
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -31,6 +36,11 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
   const [section, setSection] = useState("section1");
   const [isSaving, setIsSaving] = useState(false);
   const [cameraViolations, setCameraViolations] = useState(0);
+  const [questionStatuses, setQuestionStatuses] = useState<{
+    [key: number]: QuestionStatus;
+  }>({});
+  const [flaggedQuestions, setFlaggedQuestions] = useState<number[]>([]);
+  const [violations, setViolations] = useState(0);
 
   const warningLimit = 5;
   const maxCameraViolations = 3;
@@ -49,6 +59,36 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
 
     return () => clearInterval(timer);
   }, [timeLeft]);
+
+  const getQuestionNumber = (sectionName: string, index: number) => {
+    return sectionName === "section2" ? index + 5 : index;
+  };
+
+  const handleQuestionJump = (sectionName: string, index: number) => {
+    if (selectedOption) {
+      const questionNumber = getQuestionNumber(section, currentStep);
+      const updatedAnswers = [...userAnswers];
+      updatedAnswers[questionNumber] = selectedOption;
+      setUserAnswers(updatedAnswers);
+    }
+    setSection(sectionName);
+    setCurrentStep(index);
+    const targetQuestionNumber = getQuestionNumber(sectionName, index);
+    setSelectedOption(userAnswers[targetQuestionNumber] || null);
+  };
+
+  const toggleFlagQuestion = (questionNumber: number) => {
+    setFlaggedQuestions((prev) =>
+      prev.includes(questionNumber)
+        ? prev.filter((q) => q !== questionNumber)
+        : [...prev, questionNumber]
+    );
+  };
+
+  const isQuestionAnswered = (sectionName: string, index: number) => {
+    const questionNumber = getQuestionNumber(sectionName, index);
+    return userAnswers[questionNumber] !== undefined;
+  };
 
   const enterFullScreen = async () => {
     try {
@@ -70,7 +110,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
   };
 
   const handleCameraViolation = () => {
-    setCameraViolations(prev => {
+    setCameraViolations((prev) => {
       const newCount = prev + 1;
       if (newCount >= maxCameraViolations) {
         toast.error("Too many camera violations. Test will be submitted.");
@@ -82,16 +122,25 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
     });
   };
 
+  const handleFaceDetectionViolation = () => {
+    setViolations((prev) => prev + 1);
+  };
+
   const handleAnswer = () => {
     if (selectedOption) {
-      const updatedAnswers = [...userAnswers, selectedOption];
+      const questionNumber = getQuestionNumber(section, currentStep);
+      const updatedAnswers = [...userAnswers];
+      updatedAnswers[questionNumber] = selectedOption;
       setUserAnswers(updatedAnswers);
       setSelectedOption(null);
 
       if (section === "section1" && currentStep + 1 === 5) {
         setSection("section2");
         setCurrentStep(0);
-      } else if (section === "section2" && currentStep + 1 >= questions.length) {
+      } else if (
+        section === "section2" &&
+        currentStep + 1 >= questions.length
+      ) {
         submitTest();
       } else {
         setCurrentStep((prev) => prev + 1);
@@ -103,7 +152,10 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
 
   const submitTest = async () => {
     setIsSaving(true);
-    const allQuestions = [...questionSets[testType].section1, ...questionSets[testType].section2];
+    const allQuestions = [
+      ...questionSets[testType].section1,
+      ...questionSets[testType].section2,
+    ];
     const correctAnswers = allQuestions.filter(
       (q, index) => q.answer === userAnswers[index]
     ).length;
@@ -111,8 +163,8 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
     setScore(correctAnswers);
 
     try {
-      await addTestScore(token, { 
-        testType, 
+      await addTestScore(token, {
+        testType,
         score: correctAnswers,
         cameraViolations,
       });
@@ -138,7 +190,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
   // Score display screen
   if (score !== null) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
@@ -173,7 +225,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
   // Fullscreen prompt
   if (!isFullScreen) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[60]"
@@ -184,10 +236,11 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
           </CardHeader>
           <CardContent>
             <p className="mb-6 text-gray-600">
-              Please enable fullscreen mode and allow camera access to continue with the test.
-              You will receive a warning if you exit fullscreen mode or if your face is not visible.
+              Please enable fullscreen mode and allow camera access to continue
+              with the test. You will receive a warning if you exit fullscreen
+              mode or if your face is not visible.
             </p>
-            <Button 
+            <Button
               onClick={enterFullScreen}
               className="w-full bg-blue-600 text-white hover:bg-blue-700"
             >
@@ -201,7 +254,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
 
   // Main test interface (shown when in fullscreen)
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="fixed inset-0 bg-white z-[55] flex flex-col"
@@ -212,8 +265,8 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
       />
 
       {/* Camera Feed */}
-      <div className="fixed top-4 right-4 z-[56]">
-        <CameraFeed onFaceDetectionViolation={handleCameraViolation} />
+      <div className="fixed top-24 right-2 z-[56]">
+        <CameraFeed onFaceDetectionViolation={handleFaceDetectionViolation} />
       </div>
 
       {/* Header */}
@@ -227,77 +280,228 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
             <div className="flex items-center space-x-2">
               <Timer className="h-5 w-5" />
               <span className="text-lg font-medium">
-                {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+                {Math.floor(timeLeft / 60)}:
+                {String(timeLeft % 60).padStart(2, "0")}
               </span>
             </div>
           </div>
-          <Button 
+          <Button
             onClick={submitTest}
-            className="bg-[#FA7070] hover:bg-red-600 text-white border-none mr-[340px]"
+            className="bg-[#FA7070] hover:bg-red-600 text-white border-none ml-auto"
           >
             Submit Test
           </Button>
         </div>
       </div>
 
-      {/* Question Area */}
-      <div className="flex-1 p-6 bg-gray-50 overflow-y-auto">
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold">
-                Question {currentStep + 1} of {questions.length}
-              </h2>
-              <span className="text-sm text-gray-500">
-                Progress: {Math.round(((currentStep + 1) / questions.length) * 100)}%
-              </span>
-            </div>
-            
-            {/* Progress bar */}
-            <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
-              <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${((currentStep + 1) / questions.length) * 100}%` }}
-              />
+      {/* Main Content Area with Navigation */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Navigation Sidebar */}
+        <div className="w-64 bg-white shadow-lg overflow-y-auto">
+          <div className="p-4">
+            <h3 className="text-lg font-semibold mb-4">Question Navigator</h3>
+
+            {/* Section 1 */}
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-500 mb-2">
+                Section 1
+              </h4>
+              <div className="grid grid-cols-3 gap-2">
+                {questionSets[testType].section1.map((_, index) => {
+                  const questionNumber = getQuestionNumber("section1", index);
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleQuestionJump("section1", index)}
+                      className={`
+                        p-2 rounded-lg text-sm font-medium relative
+                        ${
+                          section === "section1" && currentStep === index
+                            ? "bg-blue-500 text-white"
+                            : isQuestionAnswered("section1", index)
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-600"
+                        }
+                        ${
+                          flaggedQuestions.includes(questionNumber)
+                            ? "ring-2 ring-yellow-400"
+                            : ""
+                        }
+                      `}
+                    >
+                      {index + 1}
+                      {flaggedQuestions.includes(questionNumber) && (
+                        <Flag className="h-3 w-3 absolute top-0 right-0 text-yellow-500" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <p className="text-lg mb-8">{questions[currentStep]?.question}</p>
-            
-            <div className="space-y-4">
-              {questions[currentStep]?.options.map((option, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className={`w-full p-6 justify-start text-left text-lg ${
-                    selectedOption === option 
-                      ? 'border-2 border-blue-500 bg-blue-50' 
-                      : 'hover:border-gray-400'
-                  }`}
-                  onClick={() => setSelectedOption(option)}
-                >
-                  <span className="mr-4">{String.fromCharCode(65 + index)}.</span>
-                  {option}
-                </Button>
-              ))}
+            {/* Section 2 */}
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-500 mb-2">
+                Section 2
+              </h4>
+              <div className="grid grid-cols-3 gap-2">
+                {questionSets[testType].section2.map((_, index) => {
+                  const questionNumber = getQuestionNumber("section2", index);
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleQuestionJump("section2", index)}
+                      className={`
+                        p-2 rounded-lg text-sm font-medium relative
+                        ${
+                          section === "section2" && currentStep === index
+                            ? "bg-blue-500 text-white"
+                            : isQuestionAnswered("section2", index)
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-600"
+                        }
+                        ${
+                          flaggedQuestions.includes(questionNumber)
+                            ? "ring-2 ring-yellow-400"
+                            : ""
+                        }
+                      `}
+                    >
+                      {index + 6}
+                      {flaggedQuestions.includes(questionNumber) && (
+                        <Flag className="h-3 w-3 absolute top-0 right-0 text-yellow-500" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="border-t pt-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Answered</span>
+                  <span className="font-medium">
+                    {userAnswers.filter((a) => a !== undefined).length}/10
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Flagged</span>
+                  <span className="font-medium">{flaggedQuestions.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Remaining Time</span>
+                  <span className="font-medium text-blue-600">
+                    {Math.floor(timeLeft / 60)}:
+                    {String(timeLeft % 60).padStart(2, "0")}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="flex justify-between items-center mt-8">
-            <Button
-              variant="outline"
-              onClick={() => setSelectedOption(null)}
-              className="px-6"
-            >
-              Clear Selection
-            </Button>
-            <Button
-              onClick={handleAnswer}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg"
-            >
-              {section === "section2" && currentStep + 1 === questions.length 
-                ? "Submit Test" 
-                : "Next Question"}
-            </Button>
+        {/* Question Area */}
+        <div className="flex-1 p-6 bg-gray-50 overflow-y-auto">
+          <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8 ml-3">
+            <div className="mb-10">
+              {/* Question Header */}
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                    Question {getQuestionNumber(section, currentStep) + 1}
+                  </h2>
+                  <p className="text-gray-500 text-sm">
+                    of{" "}
+                    {questionSets[testType].section1.length +
+                      questionSets[testType].section2.length}{" "}
+                    questions
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    toggleFlagQuestion(getQuestionNumber(section, currentStep))
+                  }
+                  className={`flex items-center space-x-2 ${
+                    flaggedQuestions.includes(
+                      getQuestionNumber(section, currentStep)
+                    )
+                      ? "text-yellow-500"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <Flag className="h-4 w-4" />
+                  <span>
+                    {flaggedQuestions.includes(
+                      getQuestionNumber(section, currentStep)
+                    )
+                      ? "Unflag"
+                      : "Flag"}
+                  </span>
+                </Button>
+              </div>
+
+              {/* Question Text */}
+              <div className="bg-gray-50 p-6 rounded-xl mb-8">
+                <p className="text-xl text-gray-800 leading-relaxed">
+                  {questions[currentStep]?.question}
+                </p>
+              </div>
+
+              {/* Options */}
+              <div className="space-y-4">
+                {questions[currentStep]?.options.map((option, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    className={`w-full p-6 justify-start text-left text-lg transition-all duration-200 ${
+                      selectedOption === option
+                        ? "border-2 border-blue-500 bg-blue-50 shadow-md transform scale-[1.02]"
+                        : "hover:border-gray-300 hover:bg-gray-50 hover:transform hover:scale-[1.01]"
+                    }`}
+                    onClick={() => setSelectedOption(option)}
+                  >
+                    <div className="flex items-center">
+                      <span
+                        className={`
+                        w-8 h-8 rounded-full mr-4 flex items-center justify-center
+                        ${
+                          selectedOption === option
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-100 text-gray-600"
+                        }
+                      `}
+                      >
+                        {String.fromCharCode(65 + index)}
+                      </span>
+                      <span className="text-gray-700">{option}</span>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-between items-center mt-10 pt-6 border-t border-gray-100">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedOption(null)}
+                className="px-6 py-3 text-gray-600 hover:bg-gray-50 transition-colors duration-200"
+              >
+                <X className="h-5 w-5 mr-2" />
+                Clear Selection
+              </Button>
+              <Button
+                onClick={handleAnswer}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
+              >
+                {section === "section2" && currentStep + 1 === questions.length
+                  ? "Submit Test"
+                  : "Next Question"}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
