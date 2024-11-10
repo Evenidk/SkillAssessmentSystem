@@ -6,13 +6,11 @@ import * as faceapi from '@vladmandic/face-api';
 
 interface CameraFeedProps {
   onFaceDetectionViolation?: () => void;
-  onMultipleFacesDetected?: () => void;
-  isActive: boolean;
+  isActive: boolean; // New prop to control camera state
 }
 
 const CameraFeed: React.FC<CameraFeedProps> = ({ 
   onFaceDetectionViolation,
-  onMultipleFacesDetected,
   isActive 
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -20,14 +18,9 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
   const streamRef = useRef<MediaStream | null>(null);
   const [isModelLoading, setIsModelLoading] = useState(true);
   const consecutiveNoFaceFrames = useRef(0);
-  const consecutiveMultiFaceFrames = useRef(0);
   const animationFrameId = useRef<number>();
-  const lastViolationTime = useRef<number>(0);
-  
-  // Constants
-  const MAX_NO_FACE_FRAMES = 45; // Increased tolerance
-  const MAX_MULTI_FACE_FRAMES = 30; // Multiple faces need to be detected consistently
-  const VIOLATION_COOLDOWN = 5000; // 5 seconds between violations
+  const MAX_NO_FACE_FRAMES = 30;
+
   const CAMERA_WIDTH = 240;
   const CAMERA_HEIGHT = 240;
 
@@ -64,23 +57,6 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
     }
   };
 
-  const handleViolation = (type: 'noFace' | 'multipleFaces') => {
-    const currentTime = Date.now();
-    if (currentTime - lastViolationTime.current < VIOLATION_COOLDOWN) {
-      return; // Skip if within cooldown period
-    }
-    
-    lastViolationTime.current = currentTime;
-    
-    if (type === 'noFace') {
-      onFaceDetectionViolation?.();
-      toast.warning('No face detected in camera view');
-    } else {
-      onMultipleFacesDetected?.();
-      toast.warning('Multiple faces detected');
-    }
-  };
-
   useEffect(() => {
     const loadModels = async () => {
       try {
@@ -100,7 +76,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
     return () => {
       stopCamera();
     };
-  }, []);
+  }, []); // Initial setup
 
   useEffect(() => {
     if (isActive) {
@@ -108,7 +84,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
     } else {
       stopCamera();
     }
-  }, [isActive]);
+  }, [isActive]); // React to isActive changes
 
   const handleVideoPlay = () => {
     if (!videoRef.current || !canvasRef.current || !isActive) return;
@@ -129,34 +105,18 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
           videoRef.current,
           new faceapi.TinyFaceDetectorOptions({
             inputSize: 160,
-            scoreThreshold: 0.6 // Increased threshold for more accurate detection
+            scoreThreshold: 0.5
           })
         );
 
-        // Handle multiple faces
-        if (detections.length > 1) {
-          consecutiveMultiFaceFrames.current++;
-          consecutiveNoFaceFrames.current = 0;
-          
-          if (consecutiveMultiFaceFrames.current >= MAX_MULTI_FACE_FRAMES) {
-            handleViolation('multipleFaces');
-            consecutiveMultiFaceFrames.current = 0;
-          }
-        }
-        // Handle no face
-        else if (detections.length === 0) {
+        if (detections.length === 0) {
           consecutiveNoFaceFrames.current++;
-          consecutiveMultiFaceFrames.current = 0;
-          
           if (consecutiveNoFaceFrames.current >= MAX_NO_FACE_FRAMES) {
-            handleViolation('noFace');
-            consecutiveNoFaceFrames.current = Math.floor(MAX_NO_FACE_FRAMES / 2); // Reset to half to maintain some memory
+            onFaceDetectionViolation?.();
+            consecutiveNoFaceFrames.current = 0;
           }
-        }
-        // Handle single face (normal case)
-        else {
-          consecutiveNoFaceFrames.current = Math.max(0, consecutiveNoFaceFrames.current - 2); // Gradually reduce
-          consecutiveMultiFaceFrames.current = 0;
+        } else {
+          consecutiveNoFaceFrames.current = 0;
         }
 
         const resizedDetections = faceapi.resizeResults(detections, displaySize);
@@ -178,11 +138,11 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
   };
 
   if (!isActive) {
-    return null;
+    return null; // Don't render anything when camera is not active
   }
 
   return (
-    <div className="relative w-[300px] h-[200px] rounded-lg overflow-hidden shadow-lg border-4 border-gray-600">
+    <div className="relative w-[300px] h-[200px] rounded-lg overflow-hidden shadow-lg border-4 border-white-600">
       {isModelLoading && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
           <div className="text-white text-sm">Loading camera...</div>

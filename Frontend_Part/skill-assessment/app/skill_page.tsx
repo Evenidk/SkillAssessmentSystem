@@ -90,7 +90,7 @@ const availableTests = [
     description: "Assess your Java programming skills.",
   },
   {
-    type: "machineLearning",
+    type: "machine-learning",
     name: "Machine Learning",
     icon: <Brain className="mr-2 h-5 w-5 text-white" />,
     description: "Evaluate your understanding of machine learning concepts.",
