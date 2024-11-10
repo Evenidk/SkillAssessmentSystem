@@ -4,13 +4,14 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { X, Timer, Flag, CheckCircle } from "lucide-react";
+import { X, Timer, Flag } from "lucide-react";
 import { toast } from "react-toastify";
 import { questionSets } from "@/app/questions";
 import { addTestScore } from "@/lib/api";
 import { useAuth } from "@/app/context/authContext";
 import SecurityMonitor from "./SecurityMonitor";
 import CameraFeed from "./CameraFeed";
+import { ViolationManager } from './ViolationManager';
 
 interface ProctoredTestComponentProps {
   testType: string;
@@ -20,6 +21,12 @@ interface ProctoredTestComponentProps {
 interface QuestionStatus {
   answered: boolean;
   flagged: boolean;
+}
+
+interface Violations {
+  multipleFaces: number;
+  tabSwitch: number;
+  screenRecording: number;
 }
 
 const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
@@ -41,10 +48,14 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
     [key: number]: QuestionStatus;
   }>({});
   const [flaggedQuestions, setFlaggedQuestions] = useState<number[]>([]);
-  const [violations, setViolations] = useState(0);
+  const [violations, setViolations] = useState<Violations>({
+    multipleFaces: 0,
+    tabSwitch: 0,
+    screenRecording: 0,
+  });
 
   const warningLimit = 5;
-  const maxCameraViolations = 3;
+  const maxCameraViolations = 5;
   const questions = questionSets[testType]?.[section] || [];
 
   useEffect(() => {
@@ -124,7 +135,20 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
   };
 
   const handleFaceDetectionViolation = () => {
-    setViolations((prev) => prev + 1);
+    handleCameraViolation();
+  };
+
+  const handleMultipleFaces = () => {
+    setViolations(prev => {
+      const newCount = prev.multipleFaces + 1;
+      if (newCount >= warningLimit) {
+        toast.error("Multiple faces detected too many times. Test will be submitted.");
+        submitTest();
+      } else {
+        toast.warning(`Multiple faces detected! Warning ${newCount}/${warningLimit}`);
+      }
+      return { ...prev, multipleFaces: newCount };
+    });
   };
 
   const handleAnswer = () => {
@@ -151,9 +175,14 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
     }
   };
 
+  const handleAutoSubmit = async () => {
+    toast.error("Maximum violations reached. Test is being submitted.");
+    await submitTest();
+  };
+
   const submitTest = async () => {
     setIsSaving(true);
-    setIsCameraActive(false); // Turn off camera when test is submitted
+    setIsCameraActive(false);
     
     const allQuestions = [...questionSets[testType].section1, ...questionSets[testType].section2];
     const correctAnswers = allQuestions.filter(
@@ -166,7 +195,12 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
       await addTestScore(token, { 
         testType, 
         score: correctAnswers,
-        cameraViolations,
+        violations: {
+          camera: cameraViolations,
+          multipleFaces: violations.multipleFaces,
+          tabSwitch: violations.tabSwitch,
+          screenRecording: violations.screenRecording,
+        },
       });
       toast.success("Test submitted successfully!");
     } catch (error) {
@@ -180,11 +214,6 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
   const handleClose = () => {
     exitFullScreen();
     onClose();
-  };
-
-  const handleAutoSubmit = async () => {
-    toast.error("Maximum warnings reached. Test is being submitted.");
-    await submitTest();
   };
 
   // Score display screen
@@ -208,9 +237,15 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
             ) : (
               <>
                 <p className="mb-4 text-lg">Your Score: {score} out of 10</p>
-                <p className="mb-4 text-sm text-gray-600">
-                  Camera Violations: {cameraViolations}
-                </p>
+                <div className="mb-4 text-sm text-gray-600">
+                  <p>Violations Summary:</p>
+                  <ul className="mt-2 space-y-1">
+                    <li>Camera Violations: {cameraViolations}</li>
+                    <li>Multiple Faces: {violations.multipleFaces}</li>
+                    <li>Tab Switches: {violations.tabSwitch}</li>
+                    <li>Screen Recording Attempts: {violations.screenRecording}</li>
+                  </ul>
+                </div>
                 <Button onClick={handleClose} className="w-full">
                   Close
                 </Button>
@@ -252,7 +287,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
     );
   }
 
-  // Main test interface (shown when in fullscreen)
+  // Main test interface
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -264,12 +299,18 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
         warningLimit={warningLimit}
       />
 
+      <ViolationManager
+        onMaxViolationsReached={handleAutoSubmit}
+      />
+
       {/* Camera Feed */}
       <div className="fixed top-24 right-2 z-[56]">
-      <CameraFeed 
-  onFaceDetectionViolation={handleFaceDetectionViolation}
-  isActive={isCameraActive}
-/>      </div>
+        <CameraFeed 
+          onFaceDetectionViolation={handleFaceDetectionViolation}
+          onMultipleFacesDetected={handleMultipleFaces}
+          isActive={isCameraActive}
+        />
+      </div>
 
       {/* Header */}
       <div className="bg-[#6482AD] text-white px-6 py-4 shadow-md">
