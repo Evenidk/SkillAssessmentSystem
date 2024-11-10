@@ -305,11 +305,11 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
 
       {/* Camera Feed */}
       <div className="fixed top-24 right-2 z-[56]">
-        <CameraFeed 
-          onFaceDetectionViolation={handleFaceDetectionViolation}
-          onMultipleFacesDetected={handleMultipleFaces}
-          isActive={isCameraActive}
-        />
+      <CameraFeed
+  isActive={true}
+  onFaceDetectionViolation={() => console.log('No face detected')}
+  // onMultipleFacesDetected={() => console.log('Multiple faces detected')}
+/>
       </div>
 
       {/* Header */}
