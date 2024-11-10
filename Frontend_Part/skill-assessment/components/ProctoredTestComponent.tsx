@@ -29,6 +29,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
   const { token } = useAuth();
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isCameraActive, setIsCameraActive] = useState(true);
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(600); // 10 minutes
@@ -152,19 +153,18 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
 
   const submitTest = async () => {
     setIsSaving(true);
-    const allQuestions = [
-      ...questionSets[testType].section1,
-      ...questionSets[testType].section2,
-    ];
+    setIsCameraActive(false); // Turn off camera when test is submitted
+    
+    const allQuestions = [...questionSets[testType].section1, ...questionSets[testType].section2];
     const correctAnswers = allQuestions.filter(
       (q, index) => q.answer === userAnswers[index]
     ).length;
-
+  
     setScore(correctAnswers);
-
+  
     try {
-      await addTestScore(token, {
-        testType,
+      await addTestScore(token, { 
+        testType, 
         score: correctAnswers,
         cameraViolations,
       });
@@ -266,8 +266,10 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
 
       {/* Camera Feed */}
       <div className="fixed top-24 right-2 z-[56]">
-        <CameraFeed onFaceDetectionViolation={handleFaceDetectionViolation} />
-      </div>
+      <CameraFeed 
+  onFaceDetectionViolation={handleFaceDetectionViolation}
+  isActive={isCameraActive}
+/>      </div>
 
       {/* Header */}
       <div className="bg-[#6482AD] text-white px-6 py-4 shadow-md">

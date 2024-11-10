@@ -6,24 +6,64 @@ import * as faceapi from '@vladmandic/face-api';
 
 interface CameraFeedProps {
   onFaceDetectionViolation?: () => void;
+  isActive: boolean; // New prop to control camera state
 }
 
-const CameraFeed: React.FC<CameraFeedProps> = ({ onFaceDetectionViolation }) => {
+const CameraFeed: React.FC<CameraFeedProps> = ({ 
+  onFaceDetectionViolation,
+  isActive 
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [isModelLoading, setIsModelLoading] = useState(true);
   const consecutiveNoFaceFrames = useRef(0);
+  const animationFrameId = useRef<number>();
   const MAX_NO_FACE_FRAMES = 30;
 
-  // Define smaller dimensions
-  const CAMERA_WIDTH = 240;  // Half of the original size
-  const CAMERA_HEIGHT = 240; // Half of the original size
+  const CAMERA_WIDTH = 240;
+  const CAMERA_HEIGHT = 240;
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (animationFrameId.current) {
+      cancelAnimationFrame(animationFrameId.current);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      if (videoRef.current) {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: CAMERA_WIDTH,
+            height: CAMERA_HEIGHT,
+            facingMode: 'user',
+            frameRate: { ideal: 30, max: 30 }
+          } 
+        });
+        streamRef.current = stream;
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error starting video:', error);
+      toast.error('Unable to access camera');
+    }
+  };
 
   useEffect(() => {
     const loadModels = async () => {
       try {
         await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-        startVideo();
+        if (isActive) {
+          await startCamera();
+        }
         setIsModelLoading(false);
       } catch (error) {
         console.error('Error loading models:', error);
@@ -31,37 +71,23 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ onFaceDetectionViolation }) => 
       }
     };
 
-    const startVideo = async () => {
-      try {
-        if (videoRef.current) {
-          const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-              width: CAMERA_WIDTH,
-              height: CAMERA_HEIGHT,
-              facingMode: 'user',
-              frameRate: { ideal: 30, max: 30 }
-            } 
-          });
-          videoRef.current.srcObject = stream;
-        }
-      } catch (error) {
-        console.error('Error starting video:', error);
-        toast.error('Unable to access camera');
-      }
-    };
-
     loadModels();
 
     return () => {
-      if (videoRef.current?.srcObject) {
-        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-        tracks.forEach(track => track.stop());
-      }
+      stopCamera();
     };
-  }, []);
+  }, []); // Initial setup
+
+  useEffect(() => {
+    if (isActive) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+  }, [isActive]); // React to isActive changes
 
   const handleVideoPlay = () => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current || !isActive) return;
 
     const canvas = canvasRef.current;
     const displaySize = { 
@@ -72,13 +98,13 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ onFaceDetectionViolation }) => 
     faceapi.matchDimensions(canvas, displaySize);
 
     const detectFaces = async () => {
-      if (!videoRef.current || !canvasRef.current) return;
+      if (!videoRef.current || !canvasRef.current || !isActive) return;
 
       try {
         const detections = await faceapi.detectAllFaces(
           videoRef.current,
           new faceapi.TinyFaceDetectorOptions({
-            inputSize: 160, // Reduced for better performance
+            inputSize: 160,
             scoreThreshold: 0.5
           })
         );
@@ -97,15 +123,23 @@ const CameraFeed: React.FC<CameraFeedProps> = ({ onFaceDetectionViolation }) => 
         canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
         faceapi.draw.drawDetections(canvas, resizedDetections);
 
-        requestAnimationFrame(detectFaces);
+        if (isActive) {
+          animationFrameId.current = requestAnimationFrame(detectFaces);
+        }
       } catch (error) {
         console.error('Face detection error:', error);
-        requestAnimationFrame(detectFaces);
+        if (isActive) {
+          animationFrameId.current = requestAnimationFrame(detectFaces);
+        }
       }
     };
 
     detectFaces();
   };
+
+  if (!isActive) {
+    return null; // Don't render anything when camera is not active
+  }
 
   return (
     <div className="relative w-[300px] h-[200px] rounded-lg overflow-hidden shadow-lg border-4 border-white-600">
