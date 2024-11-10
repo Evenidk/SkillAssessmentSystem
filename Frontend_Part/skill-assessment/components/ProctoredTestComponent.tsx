@@ -11,7 +11,7 @@ import { addTestScore } from "@/lib/api";
 import { useAuth } from "@/app/context/authContext";
 import SecurityMonitor from "./SecurityMonitor";
 import CameraFeed from "./CameraFeed";
-import { ViolationManager } from './ViolationManager';
+import { ViolationManager } from "./ViolationManager";
 
 interface ProctoredTestComponentProps {
   testType: string;
@@ -139,13 +139,17 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
   };
 
   const handleMultipleFaces = () => {
-    setViolations(prev => {
+    setViolations((prev) => {
       const newCount = prev.multipleFaces + 1;
       if (newCount >= warningLimit) {
-        toast.error("Multiple faces detected too many times. Test will be submitted.");
+        toast.error(
+          "Multiple faces detected too many times. Test will be submitted."
+        );
         submitTest();
       } else {
-        toast.warning(`Multiple faces detected! Warning ${newCount}/${warningLimit}`);
+        toast.warning(
+          `Multiple faces detected! Warning ${newCount}/${warningLimit}`
+        );
       }
       return { ...prev, multipleFaces: newCount };
     });
@@ -183,17 +187,20 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
   const submitTest = async () => {
     setIsSaving(true);
     setIsCameraActive(false);
-    
-    const allQuestions = [...questionSets[testType].section1, ...questionSets[testType].section2];
+
+    const allQuestions = [
+      ...questionSets[testType].section1,
+      ...questionSets[testType].section2,
+    ];
     const correctAnswers = allQuestions.filter(
       (q, index) => q.answer === userAnswers[index]
     ).length;
-  
+
     setScore(correctAnswers);
-  
+
     try {
-      await addTestScore(token, { 
-        testType, 
+      await addTestScore(token, {
+        testType,
         score: correctAnswers,
         violations: {
           camera: cameraViolations,
@@ -243,7 +250,9 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
                     <li>Camera Violations: {cameraViolations}</li>
                     <li>Multiple Faces: {violations.multipleFaces}</li>
                     <li>Tab Switches: {violations.tabSwitch}</li>
-                    <li>Screen Recording Attempts: {violations.screenRecording}</li>
+                    <li>
+                      Screen Recording Attempts: {violations.screenRecording}
+                    </li>
                   </ul>
                 </div>
                 <Button onClick={handleClose} className="w-full">
@@ -299,13 +308,11 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
         warningLimit={warningLimit}
       />
 
-      <ViolationManager
-        onMaxViolationsReached={handleAutoSubmit}
-      />
+      <ViolationManager onMaxViolationsReached={handleAutoSubmit} />
 
       {/* Camera Feed */}
       <div className="fixed top-24 right-2 z-[56]">
-        <CameraFeed 
+        <CameraFeed
           onFaceDetectionViolation={handleFaceDetectionViolation}
           onMultipleFacesDetected={handleMultipleFaces}
           isActive={isCameraActive}
@@ -357,20 +364,20 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
                       key={index}
                       onClick={() => handleQuestionJump("section1", index)}
                       className={`
-                        p-2 rounded-lg text-sm font-medium relative
-                        ${
-                          section === "section1" && currentStep === index
-                            ? "bg-blue-500 text-white"
-                            : isQuestionAnswered("section1", index)
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-600"
-                        }
-                        ${
-                          flaggedQuestions.includes(questionNumber)
-                            ? "ring-2 ring-yellow-400"
-                            : ""
-                        }
-                      `}
+                         p-2 rounded-lg text-sm font-medium relative
+                         ${
+                           section === "section1" && currentStep === index
+                             ? "bg-blue-500 text-white"
+                             : isQuestionAnswered("section1", index)
+                             ? "bg-green-100 text-green-700"
+                             : "bg-gray-100 text-gray-600"
+                         }
+                         ${
+                           flaggedQuestions.includes(questionNumber)
+                             ? "ring-2 ring-yellow-400"
+                             : ""
+                         }
+                       `}
                     >
                       {index + 1}
                       {flaggedQuestions.includes(questionNumber) && (
@@ -395,20 +402,20 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
                       key={index}
                       onClick={() => handleQuestionJump("section2", index)}
                       className={`
-                        p-2 rounded-lg text-sm font-medium relative
-                        ${
-                          section === "section2" && currentStep === index
-                            ? "bg-blue-500 text-white"
-                            : isQuestionAnswered("section2", index)
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-600"
-                        }
-                        ${
-                          flaggedQuestions.includes(questionNumber)
-                            ? "ring-2 ring-yellow-400"
-                            : ""
-                        }
-                      `}
+                         p-2 rounded-lg text-sm font-medium relative
+                         ${
+                           section === "section2" && currentStep === index
+                             ? "bg-blue-500 text-white"
+                             : isQuestionAnswered("section2", index)
+                             ? "bg-green-100 text-green-700"
+                             : "bg-gray-100 text-gray-600"
+                         }
+                         ${
+                           flaggedQuestions.includes(questionNumber)
+                             ? "ring-2 ring-yellow-400"
+                             : ""
+                         }
+                       `}
                     >
                       {index + 6}
                       {flaggedQuestions.includes(questionNumber) && (
@@ -509,13 +516,13 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
                     <div className="flex items-center">
                       <span
                         className={`
-                        w-8 h-8 rounded-full mr-4 flex items-center justify-center
-                        ${
-                          selectedOption === option
-                            ? "bg-blue-500 text-white"
-                            : "bg-gray-100 text-gray-600"
-                        }
-                      `}
+                         w-8 h-8 rounded-full mr-4 flex items-center justify-center
+                         ${
+                           selectedOption === option
+                             ? "bg-blue-500 text-white"
+                             : "bg-gray-100 text-gray-600"
+                         }
+                       `}
                       >
                         {String.fromCharCode(65 + index)}
                       </span>
