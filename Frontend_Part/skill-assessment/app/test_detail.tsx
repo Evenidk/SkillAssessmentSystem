@@ -18,7 +18,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Laptop, List, Lightbulb, Camera } from 'lucide-react';
-
 interface TestDetail {
   duration: string;
   equipment: string;
@@ -98,23 +97,25 @@ const TestDetailsModal: React.FC<TestDetailsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-[700px] bg-white rounded-lg shadow-lg border border-gray-200">
+      <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
-          <DialogTitle className="text-3xl font-bold text-gray-800">
+          <DialogTitle className="text-3xl font-bold">
             {capitalizeFirstLetter(testType)} Test Details
           </DialogTitle>
-          <DialogDescription className="text-gray-600">
+          <DialogDescription>
             Prepare yourself for the {capitalizeFirstLetter(testType)} assessment. Review the information below to understand what to expect and how to prepare.
           </DialogDescription>
         </DialogHeader>
+        
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
-          <TabsList className="flex gap-4 p-2 bg-gray-100 rounded-lg">
-            <TabsTrigger value="overview" className="px-4 py-2 rounded-lg font-medium">Overview</TabsTrigger>
-            <TabsTrigger value="equipment" className="px-4 py-2 rounded-lg font-medium">Equipment</TabsTrigger>
-            <TabsTrigger value="sample" className="px-4 py-2 rounded-lg font-medium">Sample</TabsTrigger>
-            <TabsTrigger value="tips" className="px-4 py-2 rounded-lg font-medium">Tips</TabsTrigger>
-            <TabsTrigger value="proctoring" className="px-4 py-2 rounded-lg font-medium">Proctoring</TabsTrigger>
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="equipment">Equipment</TabsTrigger>
+            <TabsTrigger value="sample">Sample</TabsTrigger>
+            <TabsTrigger value="tips">Tips</TabsTrigger>
+            <TabsTrigger value="proctoring">Proctoring</TabsTrigger>
           </TabsList>
+          
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -123,36 +124,36 @@ const TestDetailsModal: React.FC<TestDetailsModalProps> = ({
               animate="visible"
               exit="exit"
             >
-              <TabsContent value="overview" className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <TabsContent value="overview" className="mt-4 space-y-4">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <Clock className="w-6 h-6 text-blue-500" />
-                    <span className="font-semibold text-gray-700">Duration:</span>
-                    <Badge variant="secondary" className="px-2 py-1 text-sm">{details.duration}</Badge>
+                    <Clock className="w-6 h-6 text-primary" />
+                    <span className="font-semibold">Duration:</span>
+                    <Badge variant="secondary">{details.duration}</Badge>
                   </div>
-                  <p className="text-sm text-gray-700">
+                  <p className="text-sm text-muted-foreground">
                     This test is designed to assess your {testType} skills through a series of practical tasks and questions. Make sure you're in a quiet environment and have allocated enough time to complete the test without interruptions.
                   </p>
                 </div>
               </TabsContent>
 
-              <TabsContent value="equipment" className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <TabsContent value="equipment" className="mt-4 space-y-4">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <Laptop className="w-6 h-6 text-green-500" />
-                    <span className="font-semibold text-gray-700">Required Equipment:</span>
+                    <Laptop className="w-6 h-6 text-primary" />
+                    <span className="font-semibold">Required Equipment:</span>
                   </div>
-                  <p className="text-sm text-gray-700">{details.equipment}</p>
+                  <p className="text-sm text-muted-foreground">{details.equipment}</p>
                 </div>
               </TabsContent>
 
-              <TabsContent value="sample" className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <TabsContent value="sample" className="mt-4 space-y-4">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <List className="w-6 h-6 text-purple-500" />
-                    <span className="font-semibold text-gray-700">Sample Questions:</span>
+                    <List className="w-6 h-6 text-primary" />
+                    <span className="font-semibold">Sample Questions:</span>
                   </div>
-                  <ul className="list-disc list-inside text-sm text-gray-700 space-y-2 pl-4">
+                  <ul className="list-disc list-inside text-sm text-muted-foreground space-y-2 pl-4">
                     {details.sampleQuestions.map((question, index) => (
                       <li key={index}>{question}</li>
                     ))}
@@ -160,13 +161,13 @@ const TestDetailsModal: React.FC<TestDetailsModalProps> = ({
                 </div>
               </TabsContent>
 
-              <TabsContent value="tips" className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <TabsContent value="tips" className="mt-4 space-y-4">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <Lightbulb className="w-6 h-6 text-yellow-500" />
-                    <span className="font-semibold text-gray-700">Preparation Tips:</span>
+                    <Lightbulb className="w-6 h-6 text-primary" />
+                    <span className="font-semibold">Preparation Tips:</span>
                   </div>
-                  <ul className="list-disc list-inside text-sm text-gray-700 space-y-2 pl-4">
+                  <ul className="list-disc list-inside text-sm text-muted-foreground space-y-2 pl-4">
                     {details.preparationTips.map((tip, index) => (
                       <li key={index}>{tip}</li>
                     ))}
@@ -174,22 +175,22 @@ const TestDetailsModal: React.FC<TestDetailsModalProps> = ({
                 </div>
               </TabsContent>
 
-              <TabsContent value="proctoring" className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <TabsContent value="proctoring" className="mt-4 space-y-4">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <Camera className="w-6 h-6 text-red-500" />
-                    <span className="font-semibold text-gray-700">AI Proctoring:</span>
+                    <Camera className="w-6 h-6 text-primary" />
+                    <span className="font-semibold">AI Proctoring:</span>
                   </div>
-                  <p className="text-sm text-gray-700">
+                  <p className="text-sm text-muted-foreground">
                     This test uses AI-powered proctoring to ensure fairness and integrity. The system will:
                   </p>
-                  <ul className="list-disc list-inside text-sm text-gray-700 space-y-2 pl-4">
+                  <ul className="list-disc list-inside text-sm text-muted-foreground space-y-2 pl-4">
                     <li>Verify your identity using facial recognition</li>
                     <li>Monitor your screen for unauthorized resources</li>
                     <li>Detect suspicious behavior or movements</li>
                     <li>Ensure you remain in view of the camera throughout the test</li>
                   </ul>
-                  <p className="text-sm text-gray-700">
+                  <p className="text-sm text-muted-foreground">
                     All proctoring data is encrypted and used solely for test integrity purposes. It will be deleted after the test review period.
                   </p>
                 </div>
@@ -197,9 +198,12 @@ const TestDetailsModal: React.FC<TestDetailsModalProps> = ({
             </motion.div>
           </AnimatePresence>
         </Tabs>
+        
         <div className="mt-6 flex justify-end space-x-4">
-          <Button variant="outline" onClick={onClose} className="px-4 py-2 text-gray-700 border-gray-300">Close</Button>
-          <Button onClick={() => alert('Starting test...')} className="bg-blue-600 text-white px-6 py-2 rounded-lg">
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+          <Button onClick={() => alert('Starting test...')}>
             Start Test
           </Button>
         </div>

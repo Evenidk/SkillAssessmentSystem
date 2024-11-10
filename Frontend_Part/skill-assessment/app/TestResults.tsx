@@ -1,6 +1,6 @@
-// TestResults.tsx
 "use client";
-import React, { useState } from "react";
+import React from "react";
+import { ErrorBoundary } from 'react-error-boundary';
 import {
   Card,
   CardContent,
@@ -9,6 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   LineChart,
   Line,
@@ -20,17 +27,21 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+interface TestScore {
+  testType: string;
+  score: number;
+  date: string;
+}
+
 interface TestResultsProps {
-  testScores: Array<any>;
+  testScores: TestScore[];
   selectedTestType: string;
   setSelectedTestType: (type: string) => void;
   isLoading: boolean;
   error: string | null;
-  darkMode: boolean;
   availableTests: Array<{ type: string; name: string }>;
 }
 
-// Helper function for date formatting
 const formatDate = (dateString: string) => {
   try {
     const date = new Date(dateString);
@@ -49,33 +60,32 @@ const formatDate = (dateString: string) => {
   }
 };
 
-const TestResults: React.FC<TestResultsProps> = ({
+const ErrorFallback = () => (
+  <div className="text-center py-4 text-destructive">
+    An error occurred while displaying the test results.
+  </div>
+);
+
+const TestResults: React.FC<TestResultsProps> = (props) => {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <TestResultsContent {...props} />
+    </ErrorBoundary>
+  );
+};
+
+const TestResultsContent: React.FC<TestResultsProps> = ({
   testScores,
   selectedTestType,
   setSelectedTestType,
   isLoading,
   error,
-  darkMode,
   availableTests,
 }) => {
-  const renderTestScoresGraph = () => {
-    if (isLoading) {
-      return <div className="text-center py-4">Loading test scores...</div>;
-    }
-
-    if (error) {
-      return <div className="text-center py-4 text-red-500">{error}</div>;
-    }
-
-    if (!testScores.length) {
-      return (
-        <div className="text-center py-4">
-          No test scores available. Take a test to see your progress!
-        </div>
-      );
-    }
-
-    const processedData = testScores
+  const processedData = React.useMemo(() => {
+    if (!testScores.length) return [];
+    
+    return testScores
       .filter((score) => !selectedTestType || score.testType === selectedTestType)
       .map((score) => ({
         ...score,
@@ -84,6 +94,24 @@ const TestResults: React.FC<TestResultsProps> = ({
         originalDate: score.date
       }))
       .sort((a, b) => new Date(a.originalDate).getTime() - new Date(b.originalDate).getTime());
+  }, [testScores, selectedTestType]);
+
+  const renderTestScoresGraph = () => {
+    if (isLoading) {
+      return <div className="text-center py-4 text-muted-foreground">Loading test scores...</div>;
+    }
+
+    if (error) {
+      return <div className="text-center py-4 text-destructive">{error}</div>;
+    }
+
+    if (!testScores.length) {
+      return (
+        <div className="text-center py-4 text-muted-foreground">
+          No test scores available. Take a test to see your progress!
+        </div>
+      );
+    }
 
     return (
       <ResponsiveContainer width="100%" height={400}>
@@ -91,30 +119,32 @@ const TestResults: React.FC<TestResultsProps> = ({
           data={processedData}
           margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="3 3" />
+          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
           <XAxis 
             dataKey="date" 
-            tick={{ fill: darkMode ? "#fff" : "#000" }}
+            stroke="currentColor"
+            tick={{ fill: 'currentColor' }}
             angle={-45}
             textAnchor="end"
             height={60}
           />
           <YAxis 
             domain={[0, 100]} 
-            tick={{ fill: darkMode ? "#fff" : "#000" }}
+            stroke="currentColor"
+            tick={{ fill: 'currentColor' }}
             label={{ 
               value: 'Score (%)', 
               angle: -90, 
               position: 'insideLeft',
-              fill: darkMode ? "#fff" : "#000"
+              fill: 'currentColor'
             }}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: darkMode ? "#374151" : "#fff",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              color: darkMode ? "#fff" : "#000",
+              backgroundColor: 'hsl(var(--background))',
+              border: '1px solid hsl(var(--border))',
+              borderRadius: 'var(--radius)',
+              color: 'hsl(var(--foreground))'
             }}
             labelFormatter={(label) => `Date: ${label}`}
           />
@@ -123,7 +153,7 @@ const TestResults: React.FC<TestResultsProps> = ({
             type="monotone"
             dataKey="score"
             name="Score"
-            stroke="#8884d8"
+            stroke="hsl(var(--primary))"
             strokeWidth={2}
             dot={{ r: 4 }}
             activeDot={{ r: 8 }}
@@ -134,6 +164,23 @@ const TestResults: React.FC<TestResultsProps> = ({
   };
 
   const renderStatistics = () => {
+    if (isLoading) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <CardDescription className="animate-pulse bg-muted h-4 w-24" />
+                <CardTitle className="animate-pulse bg-muted h-6 w-16" />
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    if (error) return null;
+
     const filteredScores = testScores
       .filter((score) => score.testType === selectedTestType)
       .map((score) => score.score * 10);
@@ -148,48 +195,64 @@ const TestResults: React.FC<TestResultsProps> = ({
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Average Score</p>
-            <p className="text-2xl font-bold">{average.toFixed(1)}%</p>
-          </div>
-          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Highest Score</p>
-            <p className="text-2xl font-bold">{highest}%</p>
-          </div>
-          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Latest Score</p>
-            <p className="text-2xl font-bold">{latest}%</p>
-          </div>
-          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-            <p className="text-sm text-gray-500 dark:text-gray-400">Total Attempts</p>
-            <p className="text-2xl font-bold">{totalAttempts}</p>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardDescription>Average Score</CardDescription>
+              <CardTitle>{average.toFixed(1)}%</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardDescription>Highest Score</CardDescription>
+              <CardTitle>{highest}%</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardDescription>Latest Score</CardDescription>
+              <CardTitle>{latest}%</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardDescription>Total Attempts</CardDescription>
+              <CardTitle>{totalAttempts}</CardTitle>
+            </CardHeader>
+          </Card>
         </div>
       </div>
     );
   };
 
   return (
-    <Card className="bg-white dark:bg-gray-800 shadow-lg rounded-lg">
+    <Card>
       <CardHeader>
-        <CardTitle className="text-2xl font-bold">Test Results</CardTitle>
-        <CardDescription className="text-gray-500 dark:text-gray-400">
+        <CardTitle>Test Results</CardTitle>
+        <CardDescription>
           Track your progress over time for each test type
         </CardDescription>
         {testScores.length > 0 && (
           <div className="mt-4">
-            <select
-              className="w-full md:w-64 p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              onChange={(e) => setSelectedTestType(e.target.value)}
+            <Select
               value={selectedTestType}
+              onValueChange={setSelectedTestType}
             >
-              <option value="">All Test Types</option>
-              {[...new Set(testScores.map((score) => score.testType))].map((type) => (
-                <option key={type} value={type}>
-                  {availableTests.find((test) => test.type === type)?.name || type}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full md:w-64">
+                <SelectValue placeholder="All Test Types" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from(
+                  new Set(testScores.map(score => score.testType))
+                ).map(type => {
+                  const testInfo = availableTests.find(test => test.type === type);
+                  return (
+                    <SelectItem key={type} value={type}>
+                      {testInfo?.name || type}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </div>
         )}
       </CardHeader>
@@ -197,7 +260,7 @@ const TestResults: React.FC<TestResultsProps> = ({
         {renderTestScoresGraph()}
       </CardContent>
       {testScores.length > 0 && selectedTestType && (
-        <CardFooter className="border-t border-gray-200 dark:border-gray-700">
+        <CardFooter className="border-t">
           {renderStatistics()}
         </CardFooter>
       )}

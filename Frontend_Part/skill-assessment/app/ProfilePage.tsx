@@ -13,8 +13,8 @@ import { toast } from "react-toastify";
 import { Loader2 } from "lucide-react";
 import Navbar from "./Navbar";
 import { useAuth } from "./context/authContext";
+import { useTheme } from "./context/themeContext";
 
-// TypeScript interfaces
 interface UserProfile {
   name?: string;
   email?: string;
@@ -25,17 +25,14 @@ interface UserProfile {
 interface ProfilePageProps {
   userProfile: UserProfile;
   setUserProfile: (data: UserProfile) => Promise<void>;
-  darkMode: boolean;
-  toggleDarkMode: () => void;
 }
 
 const ProfilePage: React.FC<ProfilePageProps> = ({
   userProfile,
   setUserProfile,
-  darkMode,
-  toggleDarkMode,
 }) => {
   const { token } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [avatar, setAvatar] = useState<string>(userProfile?.avatar || "");
   const [name, setName] = useState<string>(userProfile?.name || "");
   const [role, setRole] = useState<string>(userProfile?.role || "");
@@ -100,7 +97,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
         name: name.trim(),
         role: role.trim(),
         avatar: avatarFile || avatar,
-        email: userProfile.email, // Preserve the email
+        email: userProfile.email,
       };
 
       await setUserProfile(profileData);
@@ -122,29 +119,17 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
   };
 
   return (
-    <div
-      className={`min-h-screen ${
-        darkMode ? "bg-gray-900" : "bg-gray-50"
-      } transition-colors duration-200`}
-    >
+    <div className="min-h-screen bg-background">
       <Navbar
-        darkMode={darkMode}
-        toggleDarkMode={toggleDarkMode}
         toggleMobileMenu={toggleMobileMenu}
         mobileMenuOpen={mobileMenuOpen}
       />
 
       <div className="py-6 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <Card
-          className={`${
-            darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"
-          } shadow-lg rounded-lg transition-colors duration-200`}
-        >
+        <Card>
           <CardHeader>
             <CardTitle className="text-xl font-bold">Your Profile</CardTitle>
-            <CardDescription
-              className={darkMode ? "text-gray-300" : "text-gray-600"}
-            >
+            <CardDescription>
               Manage your personal information and settings
             </CardDescription>
           </CardHeader>
@@ -156,53 +141,36 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
                   alt="User Avatar"
                   className="w-32 h-32 rounded-full border-4 border-primary object-cover transition-transform duration-200 group-hover:scale-105"
                 />
-                <label className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors">
+                <label className="absolute bottom-0 right-0 bg-primary text-primary-foreground p-2 rounded-full cursor-pointer hover:bg-primary/90 transition-colors">
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleAvatarChange}
                     className="hidden"
                   />
-                  <span className="text-white text-sm">Edit</span>
+                  <span className="text-sm">Edit</span>
                 </label>
               </div>
               <div className="text-center sm:text-left">
-                <h2
-                  className={`${
-                    darkMode ? "text-white" : "text-gray-800"
-                  } text-2xl font-semibold`}
-                >
+                <h2 className="text-2xl font-semibold text-foreground">
                   {name}
                 </h2>
-                <p
-                  className={`${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  } mb-2`}
-                >
+                <p className="text-muted-foreground mb-2">
                   {userProfile?.email}
                 </p>
-                <p className={`${darkMode ? "text-gray-400" : "text-gray-600"}`}>
-                  {role}
-                </p>
+                <p className="text-muted-foreground">{role}</p>
               </div>
             </div>
 
             <div className="space-y-6">
               <div>
-                <label
-                  className={`block text-sm font-medium ${
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  } mb-1`}
-                >
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Name *
                 </label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className={`mt-1 w-full ${
-                    darkMode ? "bg-gray-700 text-white" : ""
-                  }`}
                   placeholder="Enter your name"
                   maxLength={50}
                   required
@@ -210,37 +178,24 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
               </div>
 
               <div>
-                <label
-                  className={`block text-sm font-medium ${
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  } mb-1`}
-                >
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Email
                 </label>
                 <Input
                   value={userProfile?.email}
-                  className={`mt-1 w-full bg-gray-100 cursor-not-allowed ${
-                    darkMode ? "text-gray-400" : ""
-                  }`}
+                  className="bg-muted cursor-not-allowed"
                   disabled
                 />
               </div>
 
               <div>
-                <label
-                  className={`block text-sm font-medium ${
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  } mb-1`}
-                >
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Role
                 </label>
                 <Input
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className={`mt-1 w-full ${
-                    darkMode ? "bg-gray-700 text-white" : ""
-                  }`}
                   placeholder="Enter your role"
                   maxLength={50}
                 />
@@ -249,7 +204,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
               <Button
                 onClick={handleSaveChanges}
                 disabled={isSubmitting}
-                className="w-full bg-blue-600 text-white hover:bg-blue-700 transition-all mt-4 flex items-center justify-center"
+                className="w-full"
               >
                 {isSubmitting ? (
                   <>

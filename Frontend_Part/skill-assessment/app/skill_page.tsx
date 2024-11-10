@@ -18,19 +18,12 @@ import { Switch } from "@/components/ui/switch";
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
 } from "recharts";
 import { Code, PenTool, Cpu, Book, Terminal, Brain, Globe } from "lucide-react";
 import TestDetailsModal from "@/app/test_detail";
@@ -39,12 +32,12 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Navbar from "./Navbar";
 import ProfilePage from "./ProfilePage";
-import { getUserTestScores } from "../lib/api"; // Make sure this import path is correct
-// Add this with your other imports at the top
+import { getUserTestScores } from "../lib/api";
 import TestScoresLineGraph from "../components/TestScoresLineGraph";
 import Dashboard from "./Dashboard";
 import AvailableTests from "./AvailableTests";
 import TestResults from "./TestResults";
+import { useTheme } from "./context/themeContext";
 
 const availableTests = [
   {
@@ -114,9 +107,9 @@ const mockData = [
 const SkillAssessmentInterface = () => {
   const { token } = useAuth();
   const router = useRouter();
+  const { theme } = useTheme();
   const [activeTest, setActiveTest] = useState(null);
   const [testInProgress, setTestInProgress] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [currentSection, setCurrentSection] = useState("dashboard");
   const [testDetailsOpen, setTestDetailsOpen] = useState(false);
   const [selectedTest, setSelectedTest] = useState(null);
@@ -202,9 +195,9 @@ const SkillAssessmentInterface = () => {
   }, [token, router]);
 
   // Dark mode toggle
-  useEffect(() => {
-    document.body.classList.toggle("dark", darkMode);
-  }, [darkMode]);
+  // useEffect(() => {
+  //   document.body.classList.toggle("dark", darkMode);
+  // }, [darkMode]);
 
   const startTest = (testType) => {
     setActiveTest(testType);
@@ -220,13 +213,13 @@ const SkillAssessmentInterface = () => {
     setActiveTest(null);
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    toast.success(`Switched to ${!darkMode ? "Dark" : "Light"} Mode`, {
-      position: "bottom-left",
-      autoClose: 2000,
-    });
-  };
+  // const toggleDarkMode = () => {
+  //   setDarkMode(!darkMode);
+  //   toast.success(`Switched to ${!darkMode ? "Dark" : "Light"} Mode`, {
+  //     position: "bottom-left",
+  //     autoClose: 2000,
+  //   });
+  // };
 
   const openTestDetails = (testType) => {
     setSelectedTest(testType);
@@ -244,16 +237,16 @@ const SkillAssessmentInterface = () => {
   // Render test scores visualization
   const renderTestScoresGraph = () => {
     if (isLoading) {
-      return <div className="text-center py-4">Loading test scores...</div>;
+      return <div className="text-center py-4 text-muted-foreground">Loading test scores...</div>;
     }
 
     if (error) {
-      return <div className="text-center py-4 text-red-500">{error}</div>;
+      return <div className="text-center py-4 text-destructive">{error}</div>;
     }
 
     if (!testScores.length) {
       return (
-        <div className="text-center py-4">
+        <div className="text-center py-4 text-muted-foreground">
           No test scores available. Take a test to see your progress!
         </div>
       );
@@ -261,15 +254,29 @@ const SkillAssessmentInterface = () => {
     return (
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={performanceData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="testType" />
-          <YAxis domain={[0, 100]} />
-          <Tooltip />
+          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+          <XAxis 
+            dataKey="testType" 
+            stroke="currentColor"
+            tick={{ fill: 'currentColor' }}
+          />
+          <YAxis 
+            domain={[0, 100]} 
+            stroke="currentColor"
+            tick={{ fill: 'currentColor' }}
+          />
+          <Tooltip 
+            contentStyle={{ 
+              backgroundColor: 'hsl(var(--background))',
+              border: '1px solid hsl(var(--border))',
+              color: 'hsl(var(--foreground))'
+            }}
+          />
           <Legend />
           <Line
             type="monotone"
             dataKey="averageScore"
-            stroke="#8884d8"
+            stroke="hsl(var(--primary))"
             name="Average Score"
           />
         </LineChart>
@@ -277,18 +284,11 @@ const SkillAssessmentInterface = () => {
     );
   };
 
+
   return (
-    <div
-      className={`min-h-screen transition-colors duration-200 ${
-        darkMode
-          ? "bg-gray-900 text-white"
-          : "bg-gradient-to-br from-blue-100 to-indigo-100"
-      }`}
-    >
+    <div className="min-h-screen bg-background">
       <ToastContainer />
       <Navbar
-        darkMode={darkMode}
-        toggleDarkMode={toggleDarkMode}
         toggleMobileMenu={toggleMobileMenu}
         mobileMenuOpen={mobileMenuOpen}
         availableTests={availableTests}
@@ -301,7 +301,6 @@ const SkillAssessmentInterface = () => {
           <ProfilePage
             userProfile={userProfile}
             setUserProfile={setUserProfile}
-            darkMode={darkMode}
           />
         ) : (
           <Tabs
@@ -309,20 +308,10 @@ const SkillAssessmentInterface = () => {
             className="space-y-4"
             onValueChange={setCurrentSection}
           >
-            <TabsList
-              className={`${
-                darkMode ? "bg-gray-800" : "bg-white"
-              } rounded-lg shadow-md flex flex-wrap`}
-            >
-              <TabsTrigger value="dashboard" className="w-full sm:w-auto">
-                Dashboard
-              </TabsTrigger>
-              <TabsTrigger value="tests" className="w-full sm:w-auto">
-                Available Tests
-              </TabsTrigger>
-              <TabsTrigger value="results" className="w-full sm:w-auto">
-                Test Results
-              </TabsTrigger>
+            <TabsList className="bg-card">
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="tests">Available Tests</TabsTrigger>
+              <TabsTrigger value="results">Test Results</TabsTrigger>
             </TabsList>
 
             <AnimatePresence mode="wait">
@@ -352,7 +341,6 @@ const SkillAssessmentInterface = () => {
                     setSelectedTestType={setSelectedTestType}
                     isLoading={isLoading}
                     error={error}
-                    darkMode={darkMode}
                     availableTests={availableTests}
                   />
                 </TabsContent>
@@ -367,6 +355,7 @@ const SkillAssessmentInterface = () => {
           <ProctoredTestComponent testType={activeTest} onClose={closeTest} />
         )}
       </AnimatePresence>
+      
       <TestDetailsModal
         isOpen={testDetailsOpen}
         onClose={() => setTestDetailsOpen(false)}

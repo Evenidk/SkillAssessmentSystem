@@ -22,47 +22,53 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      <h1 className="text-3xl font-bold mb-6">Login</h1>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-      <form onSubmit={handleLogin} className="space-y-4 w-80">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Username"
-          className="w-full p-2 border border-gray-300 rounded"
-          autoComplete="username"
-          disabled={loading}
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="w-full p-2 border border-gray-300 rounded"
-          autoComplete="current-password"
-          disabled={loading}
-        />
-        <button 
-          type="submit" 
-          className="w-full bg-blue-600 text-white py-2 rounded disabled:bg-blue-400"
-          disabled={loading}
-        >
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-      <div className="mt-4">
-        <p className="text-gray-600">
-          Don't have an account?{' '}
-          <button
-            onClick={() => router.push('/register')}
-            className="text-blue-600 hover:underline"
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+      <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg">
+        <h1 className="text-3xl font-bold text-center text-foreground">Login</h1>
+        {error && <p className="text-destructive text-center">{error}</p>}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="space-y-2">
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Username"
+              className="w-full p-3 border rounded-md bg-background text-foreground placeholder:text-muted-foreground border-input focus:border-primary focus:ring-1 focus:ring-primary"
+              autoComplete="username"
+              disabled={loading}
+            />
+          </div>
+          <div className="space-y-2">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full p-3 border rounded-md bg-background text-foreground placeholder:text-muted-foreground border-input focus:border-primary focus:ring-1 focus:ring-primary"
+              autoComplete="current-password"
+              disabled={loading}
+            />
+          </div>
+          <button 
+            type="submit" 
+            className="w-full py-3 font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
             disabled={loading}
           >
-            Register here
+            {loading ? 'Logging in...' : 'Login'}
           </button>
-        </p>
+        </form>
+        <div className="text-center">
+          <p className="text-muted-foreground">
+            Don't have an account?{' '}
+            <button
+              onClick={() => router.push('/register')}
+              className="font-semibold text-primary hover:underline focus:outline-none"
+              disabled={loading}
+            >
+              Register here
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
