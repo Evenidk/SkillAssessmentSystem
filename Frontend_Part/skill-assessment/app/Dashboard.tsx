@@ -187,9 +187,9 @@ const TestCard = ({ test, index }) => {
             <span>⏱️ {test.duration}</span>
             <span>📝 {test.questions} questions</span>
           </div>
-          <Button className="w-full" size="sm">
+          {/* <Button className="w-full" size="sm">
             Start Assessment
-          </Button>
+          </Button> */}
         </div>
       </HoverCardContent>
     </HoverCard>
@@ -241,7 +241,7 @@ const Dashboard = () => {
               >
                 <Button 
                   onClick={scrollToVideo}
-                  className="bg-primary text-white hover:bg-primary/90 transition-all duration-300"
+                  className="bg-primary text-background hover:bg-primary/90 transition-all duration-300"
                 >
                   Get Started
                 </Button>
