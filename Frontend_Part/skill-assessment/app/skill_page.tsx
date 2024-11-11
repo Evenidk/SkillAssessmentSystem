@@ -25,7 +25,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Code, PenTool, Cpu, Book, Terminal, Brain, Globe } from "lucide-react";
+import { Code, PenTool, Cpu, Book, Terminal, Brain, Globe, Server, Database, Monitor, BarChart, CheckSquare } from "lucide-react";
 import TestDetailsModal from "@/app/test_detail";
 import ProctoredTestComponent from "@/components/ProctoredTestComponent";
 import { ToastContainer, toast } from "react-toastify";
@@ -88,7 +88,62 @@ const availableTests = [
     icon: <Brain className="mr-2 h-5 w-5 text-white" />,
     description: "Evaluate your understanding of machine learning concepts.",
   },
+  {
+    type: "nodejs",
+    name: "Node.js",
+    icon: <Server className="mr-2 h-5 w-5 text-white" />,
+    description: "Assess your knowledge of Node.js runtime environment.",
+  },
+  {
+    type: "mongodb",
+    name: "MongoDB",
+    icon: <Database className="mr-2 h-5 w-5 text-white" />,
+    description: "Test your understanding of MongoDB database concepts.",
+  },
+  {
+    type: "c",
+    name: "C",
+    icon: <Code className="mr-2 h-5 w-5 text-white" />,
+    description: "Evaluate your knowledge of C programming fundamentals.",
+  },
+  {
+    type: "csharp",
+    name: "C#",
+    icon: <Monitor className="mr-2 h-5 w-5 text-white" />,
+    description: "Assess your understanding of C# and .NET framework.",
+  },
+  {
+    type: "sql",
+    name: "SQL",
+    icon: <Database className="mr-2 h-5 w-5 text-white" />,
+    description: "Evaluate your skills in SQL and database management.",
+  },
+  {
+    type: "expressjs",
+    name: "Express.js",
+    icon: <Server className="mr-2 h-5 w-5 text-white" />,
+    description: "Test your knowledge of Express.js for web development.",
+  },
+  {
+    type: "webservers",
+    name: "Web Servers",
+    icon: <Globe className="mr-2 h-5 w-5 text-white" />,
+    description: "Evaluate your understanding of web server fundamentals.",
+  },
+  {
+    type: "datascience",
+    name: "Data Science",
+    icon: <BarChart className="mr-2 h-5 w-5 text-white" />,
+    description: "Assess your knowledge of data science principles.",
+  },
+  {
+    type: "aptitude",
+    name: "Aptitude",
+    icon: <CheckSquare className="mr-2 h-5 w-5 text-white" />,
+    description: "Test your logical, numerical, and reasoning aptitude.",
+  },
 ];
+
 
 const mockData = [
   {
