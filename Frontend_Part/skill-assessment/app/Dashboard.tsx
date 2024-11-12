@@ -320,7 +320,7 @@ const Dashboard = () => {
                 <video 
                   className="w-full h-full object-cover"
                   controls
-                  poster="/path-to-your-thumbnail.jpg"
+                  poster="/thumbnail.jpg"
                 >
                   <source src="/path-to-your-video.mp4" type="video/mp4" />
                   Your browser does not support the video tag.

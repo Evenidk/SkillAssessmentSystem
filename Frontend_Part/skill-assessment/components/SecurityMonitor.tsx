@@ -66,7 +66,7 @@ const SecurityMonitor: React.FC<SecurityMonitorProps> = ({
           </p>
           <Button 
             onClick={handleEnterFullscreen}
-            className="w-full bg-blue-600 text-white hover:bg-blue-700"
+            className="w-full bg-foreground text-white hover:bg-foreground/90"
           >
             Return to Fullscreen
           </Button>

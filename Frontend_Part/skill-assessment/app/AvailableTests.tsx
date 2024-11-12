@@ -185,14 +185,14 @@ const AvailableTests: React.FC<AvailableTestsProps> = ({
                     <Button
                       onClick={() => startTest(test.type)}
                       variant="secondary"
-                      className="w-full sm:w-auto bg-foreground hover:bg-white/20 text-background border-white/10 backdrop-blur-sm"
+                      className="w-full sm:w-auto bg-foreground hover:bg-foreground/20 text-background border-white/10 backdrop-blur-sm"
                     >
                       Start Test
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => handleOpenDetails(test)}
-                      className="w-full sm:w-auto bg-background/90 hover:bg-white text-primary hover:text-primary/90"
+                      className="w-full sm:w-auto bg-background/90 hover:bg-background text-primary hover:text-primary/90"
                     >
                       View Details
                     </Button>

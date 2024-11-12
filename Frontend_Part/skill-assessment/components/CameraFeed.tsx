@@ -142,7 +142,7 @@ const CameraFeed: React.FC<CameraFeedProps> = ({
   }
 
   return (
-    <div className="relative w-[300px] h-[200px] rounded-lg overflow-hidden shadow-lg border-4 border-white-600">
+    <div className="relative w-[300px] h-[200px] rounded-lg overflow-hidden shadow-lg border-4 border-foreground">
       {isModelLoading && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
           <div className="text-white text-sm">Loading camera...</div>

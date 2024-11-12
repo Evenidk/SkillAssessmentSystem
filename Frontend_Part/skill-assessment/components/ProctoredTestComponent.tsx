@@ -277,7 +277,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
             </p>
             <Button
               onClick={enterFullScreen}
-              className="w-full bg-blue-600 text-white hover:bg-blue-700"
+              className="w-full bg-foreground text-secondary hover:bg-foreground/90"
             >
               Enter Fullscreen
             </Button>
@@ -313,7 +313,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
       </div>
 
       {/* Header */}
-      <div className="bg-[#6482AD] text-white px-6 py-4 shadow-md">
+      <div className="bg-foreground text-secondary px-6 py-4 shadow-md">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-8">
             <div>
@@ -330,7 +330,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
           </div>
           <Button
             onClick={submitTest}
-            className="bg-[#FA7070] hover:bg-red-600 text-white border-none ml-auto"
+            className="bg-red-700 hover:bg-red-600 text-white border-none ml-auto"
           >
             Submit Test
           </Button>
@@ -360,7 +360,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
                         p-2 rounded-lg text-sm font-medium relative
                         ${
                           section === "section1" && currentStep === index
-                            ? "bg-blue-500 text-white"
+                            ? "bg-foreground text-white"
                             : isQuestionAnswered("section1", index)
                             ? "bg-green-100 text-green-700"
                             : "bg-gray-100 text-gray-600"
@@ -398,7 +398,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
                         p-2 rounded-lg text-sm font-medium relative
                         ${
                           section === "section2" && currentStep === index
-                            ? "bg-blue-500 text-white"
+                            ? "bg-foreground text-white"
                             : isQuestionAnswered("section2", index)
                             ? "bg-green-100 text-green-700"
                             : "bg-gray-100 text-gray-600"
@@ -435,7 +435,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Remaining Time</span>
-                  <span className="font-medium text-blue-600">
+                  <span className="font-medium text-red-600">
                     {Math.floor(timeLeft / 60)}:
                     {String(timeLeft % 60).padStart(2, "0")}
                   </span>
@@ -501,7 +501,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
                     variant="outline"
                     className={`w-full p-6 justify-start text-left text-lg transition-all duration-200 ${
                       selectedOption === option
-                        ? "border-2 border-blue-500 bg-blue-50 shadow-md transform scale-[1.02]"
+                        ? "border-2 border-foreground bg-foreground/10 shadow-md transform scale-[1.02]"
                         : "hover:border-gray-300 hover:bg-gray-50 hover:transform hover:scale-[1.01]"
                     }`}
                     onClick={() => setSelectedOption(option)}
@@ -512,7 +512,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
                         w-8 h-8 rounded-full mr-4 flex items-center justify-center
                         ${
                           selectedOption === option
-                            ? "bg-blue-500 text-white"
+                            ? "bg-foreground text-white"
                             : "bg-gray-100 text-gray-600"
                         }
                       `}
@@ -538,7 +538,7 @@ const ProctoredTestComponent: React.FC<ProctoredTestComponentProps> = ({
               </Button>
               <Button
                 onClick={handleAnswer}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
+                className="bg-foreground hover:bg-foreground/90 text-white px-8 py-4 text-lg rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
               >
                 {section === "section2" && currentStep + 1 === questions.length
                   ? "Submit Test"
