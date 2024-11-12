@@ -38,6 +38,7 @@ import Dashboard from "./Dashboard";
 import AvailableTests from "./AvailableTests";
 import TestResults from "./TestResults";
 import { useTheme } from "./context/themeContext";
+import Footer from "./Footer";
 
 const availableTests = [
   {
@@ -249,11 +250,6 @@ const SkillAssessmentInterface = () => {
     }
   }, [token, router]);
 
-  // Dark mode toggle
-  // useEffect(() => {
-  //   document.body.classList.toggle("dark", darkMode);
-  // }, [darkMode]);
-
   const startTest = (testType) => {
     setActiveTest(testType);
     setTestInProgress(true);
@@ -267,14 +263,6 @@ const SkillAssessmentInterface = () => {
     setTestInProgress(false);
     setActiveTest(null);
   };
-
-  // const toggleDarkMode = () => {
-  //   setDarkMode(!darkMode);
-  //   toast.success(`Switched to ${!darkMode ? "Dark" : "Light"} Mode`, {
-  //     position: "bottom-left",
-  //     autoClose: 2000,
-  //   });
-  // };
 
   const openTestDetails = (testType) => {
     setSelectedTest(testType);
@@ -404,7 +392,7 @@ const SkillAssessmentInterface = () => {
           </Tabs>
         )}
       </main>
-
+      <Footer />
       <AnimatePresence>
         {testInProgress && activeTest && (
           <ProctoredTestComponent testType={activeTest} onClose={closeTest} />
