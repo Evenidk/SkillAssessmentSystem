@@ -124,7 +124,7 @@ Skill Assessment Platform is a robust and interactive solution to evaluate and e
 ## Screenshots  
 
 ### **Dashboard**  
-![Dashboard](![image](https://github.com/user-attachments/assets/b1525e5f-b1f0-4d83-8863-6ef5673ee5d0))  
+![Dashboard]![image](https://github.com/user-attachments/assets/b1525e5f-b1f0-4d83-8863-6ef5673ee5d0)
 
 ### **Available Tests**  
 ![Available Tests](screenshots/tests.png)  
