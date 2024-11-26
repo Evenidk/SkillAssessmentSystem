@@ -86,8 +86,8 @@ Skill Assessment Platform is a robust and interactive solution to evaluate and e
 1. Clone the repository:  
 
    ```bash  
-   git clone https://github.com/<your-username>/skill-assessment-platform.git  
-   cd skill-assessment-platform  
+   git clone https://github.com/<your-username>/SkillAssessmentSystem.git  
+   cd SkillAssessmentSystem 
    ```  
 
 2. Install dependencies:  
