@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
-// Add TypeScript interface
 interface UserProfile {
   name?: string;
   email?: string;
@@ -21,7 +20,6 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
-    // Check if we're in the browser and get the saved preference
     if (typeof window !== 'undefined') {
       return localStorage.getItem('darkMode') === 'true';
     }
@@ -47,11 +45,9 @@ export default function Profile() {
     fetchProfile();
   }, [token]);
 
-  // Add dark mode toggle function
   const toggleDarkMode = () => {
     setDarkMode(prev => {
       const newValue = !prev;
-      // Save the preference
       localStorage.setItem('darkMode', String(newValue));
       return newValue;
     });
@@ -68,7 +64,6 @@ export default function Profile() {
     }
   };
 
-  // Add mobile menu toggle function
   const toggleMobileMenu = () => {
     setMobileMenuOpen(prev => !prev);
   };

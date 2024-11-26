@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children }) {
   }, [token, loading, router]);
 
   if (loading) {
-    return <div>Loading...</div>; // Or your loading component
+    return <div>Loading...</div>; 
   }
 
   return token ? children : null;
