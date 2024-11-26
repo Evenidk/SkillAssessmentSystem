@@ -1,4 +1,4 @@
-# Skill Assessment Platform  
+# SkillProve AI
 
 ## Description  
 
