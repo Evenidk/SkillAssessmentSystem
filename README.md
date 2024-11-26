@@ -123,18 +123,26 @@ Skill Assessment Platform is a robust and interactive solution to evaluate and e
 
 ## Screenshots  
 
+### **Register Page**
+![image](https://github.com/user-attachments/assets/2b7fd930-e7f3-4822-aa25-8e1290c03bdd)
+
+### **Login Page**
+![image](https://github.com/user-attachments/assets/f75b5b61-4656-43f9-b1ba-c36055a4e1a8)
+
 ### **Dashboard**  
-![Dashboard]![image](https://github.com/user-attachments/assets/b1525e5f-b1f0-4d83-8863-6ef5673ee5d0)
+![image](https://github.com/user-attachments/assets/b1525e5f-b1f0-4d83-8863-6ef5673ee5d0)
 
 ### **Available Tests**  
-![Available Tests](screenshots/tests.png)  
+![image](https://github.com/user-attachments/assets/f24e16c5-542f-4084-8478-1e669b1d82bf)
 
 ### **Test Interface**  
-![Test Interface](screenshots/test-interface.png)  
+![image](https://github.com/user-attachments/assets/ed4b578f-42f4-4e3a-871f-d0bcf65f268e)
 
 ### **Results Analytics**  
-![Results Analytics](screenshots/results.png)  
+![image](https://github.com/user-attachments/assets/c5613341-da7d-44ed-8271-30e53628b0b5)
 
+### **Profile Page**
+![image](https://github.com/user-attachments/assets/b6382a9e-9888-475b-8f1e-5ff2e864ab4f)
 
 ## Contributing  
 
