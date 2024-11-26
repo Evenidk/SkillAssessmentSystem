@@ -2,7 +2,7 @@
 
 ## Description  
 
-Skill Assessment Platform is a robust and interactive solution to evaluate and enhance your skills through proctored tests. The platform offers **17+ skill assessment tests**, detailed analytics, and an engaging user experience with light and dark themes. It’s designed for students, professionals, and organizations to track performance and improve over time.  
+SkillProve AI is a robust and interactive solution to evaluate and enhance your skills through proctored tests. The platform offers **17+ skill assessment tests**, detailed analytics, and an engaging user experience with light and dark themes. It’s designed for students, professionals, and organizations to track performance and improve over time.  
 
 ---
 
@@ -39,7 +39,7 @@ Skill Assessment Platform is a robust and interactive solution to evaluate and e
 
 ### **Post-Test Features**  
 - **Test Results**:  
-  - Immediate feedback with test score and a violation summary (if applicable).  
+  - Immediate feedback with test scores and a violation summary (if applicable).  
   - Encourages better test practices with detailed explanations of violations.  
 - **Results Analytics**:  
   - Track scores across all tests in a **graphical interface**.  
