@@ -112,11 +112,15 @@ SkillProve AI is a robust and interactive solution to evaluate and enhance your 
      JWT_SECRET=<your-jwt-secret>  
      ```  
 
-4. Start the development server:  
+4. Start the Backend server:  
+
+   ```bash  
+   node server.js  
+   ```
+5. Start the development server:  
 
    ```bash  
    npm run dev
-   node server.js  
    ```  
 
    Open [http://localhost:3000](http://localhost:3000) to view the application in your browser.  
