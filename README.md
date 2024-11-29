@@ -87,7 +87,8 @@ SkillProve AI is a robust and interactive solution to evaluate and enhance your 
 
    ```bash  
    git clone https://github.com/<your-username>/SkillAssessmentSystem.git  
-   cd SkillAssessmentSystem 
+   cd Frontend_Part/skill-assessment
+   cd Backend_part 
    ```  
 
 2. Install dependencies:  
@@ -114,7 +115,8 @@ SkillProve AI is a robust and interactive solution to evaluate and enhance your 
 4. Start the development server:  
 
    ```bash  
-   npm run dev  
+   npm run dev
+   node server.js  
    ```  
 
    Open [http://localhost:3000](http://localhost:3000) to view the application in your browser.  
